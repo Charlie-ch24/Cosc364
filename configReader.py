@@ -1,3 +1,6 @@
-def say():
-    return "hi"
+
+
+def Config():
+
+    return "butt"
 
