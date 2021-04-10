@@ -9,6 +9,7 @@ class Router:
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
         self.ROUTING_TABLE = {}
+        
         self.OUTPUT_PORTS = {}
         for output in outputs:
             port, cost, dest = output.split('-')
@@ -25,3 +26,4 @@ class Router:
 
     def print_route_table(self):
         pass
+

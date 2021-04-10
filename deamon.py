@@ -6,7 +6,7 @@ Router main program
 ########## Header ##########
 import deamon_sup as system
 import socket, select
-import sys, time, random
+import sys, time, random, traceback
 from router import *
 
 LocalHost = "127.0.0.1"
@@ -33,15 +33,17 @@ def main():
         print("Error: Config file is not provided!")
     except FileNotFoundError:
         print("Error: given Config file not found!")
+    except ValueError:
+        print("Error: Invalid port number in config data")
     except Exception as e:
-        print(e)
+        traceback.print_exc() # Traceback unknown error
     else:
         ROUTER.print_hello()
 
 
 
 
-        
+
     finally:
         sys.exit()
     
