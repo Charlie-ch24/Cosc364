@@ -1,0 +1,3 @@
+router-id 1
+input-ports 1023
+outputs 5002-6-2

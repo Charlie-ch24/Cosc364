@@ -1,0 +1,4 @@
+router-id 6
+input-ports 5013, 5014
+outputs 5002-5-1, 5012-1-5
+timer 3
