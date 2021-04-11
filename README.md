@@ -19,4 +19,8 @@ Charlie Hunter: None
 
 -
 
+## GIT command
+
+- Remove track folder: git rm -r --cached `folder/file`
+
 ## Documatation
