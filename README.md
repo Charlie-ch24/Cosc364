@@ -13,7 +13,8 @@ Charlie Hunter: None
 
 ### MAC OS
 
--
+- cd C:/usr/local/bin/python3.8 "/Users/charliehunter/Desktop/cosc364/Cosc364
+- python deamon.py config_demo/router1
 
 ### Linux
 
