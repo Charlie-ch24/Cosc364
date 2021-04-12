@@ -23,7 +23,15 @@ def createSocket():
 
 def send(state):
     """ Send forwarding table to neighbour routers """
+    print("Hello")
+
+    head = system.create_head("1")
+
+    print(head, "Head")
+
+
     for sock in SOCKETS:
+        print(sock, "socks")
         pass
 
     status = "No-change"
@@ -31,7 +39,7 @@ def send(state):
         status = "Default"
     elif state is True:
         status = "Updated"
-    print(f"Routing Table ({status}) sent to neighbours.")
+    print("Routing Table ({0}) sent to neighbours.".format(status))
 
 def receive(timeout = 3):
     """ return True if some data received """

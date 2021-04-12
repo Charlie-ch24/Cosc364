@@ -15,7 +15,8 @@ def create_head(rID):
     command = command.to_bytes(1, byteorder='big')
     verison = verison.to_bytes(1, byteorder='big')
     rID = rID.to_bytes(2, byteorder='big')
-    header = bytearray(command + verison + rID)
+    header = bytearray(command + verison + header_zero)
+    print(header, "Header")
     return header
 
 def create_rip_entry(destID, metric):
