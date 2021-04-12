@@ -7,7 +7,7 @@ Router main program
 import deamon_sup as system
 import socket, select
 import sys, time, random, traceback
-import create_socket as create_socket
+import socket_maker as socket_maker
 from router import *
 
 LocalHost = "127.0.0.1"
@@ -75,10 +75,11 @@ def main():
     try:
         filename = sys.argv[1]
         rID, inputs, outputs = system.read_config(filename)
-        rID = router_id_check(rID)
-        inputs = inputport_check(inputs)
-        output = output_check(outputs, inputs)
+        rID = router_id_check(rID) # checks Router Id and returns as Int
+        inputs = inputport_check(inputs) # checks inputs and returns in list
+        output = output_check(outputs, inputs) # Checks outputs and returns in dict
         ROUTER = Router(rID, inputs, outputs)
+        input_sockets = socket_maker.create(inputs) # Creating sockets with correct inputs
     except IndexError:
         print("Error: Config file is not provided!")
     except FileNotFoundError:
