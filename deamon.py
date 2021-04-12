@@ -24,36 +24,29 @@ ROUTER = None # Router Obj
 
 
 ########## Program ##########
-def main():
+def init_router():
     global ROUTER
+    filename = sys.argv[1]
+    rID, inputs, outputs = system.read_config(filename)
+    ROUTER = Router(rID, inputs, outputs)
+    ROUTER.print_hello()    
+    
+if __name__ == "__main__":
     try:
-        filename = sys.argv[1]
-        rID, inputs, outputs = system.read_config(filename)
-        ROUTER = Router(rID, inputs, outputs)
+        init_router()
+        while True:
+            ROUTER.print_route_table()
+            time.sleep(3)
     except IndexError:
         print("Error: Config file is not provided!")
     except FileNotFoundError:
         print("Error: given Config file not found!")
-    except ValueError:
-        print("Error: Invalid port number in config data")
-    except Exception:
-        raise Exception
-    else:
-        # No exception
-        ROUTER.print_hello()
-    
-    
-if __name__ == "__main__":
-    try:
-        main()
-        while True:
-            ROUTER.print_route_table()
-            time.sleep(3)
+    except ValueError as v_err:
+        print("Warning:", v_err)
     except KeyboardInterrupt:
-        print("Program exited!")
+        print("\n***** Deamon exit successfully! Router shuting down... *****")
     except Exception as e:
         traceback.print_exc() # Traceback unknown error
-        print(e)
         print("Program exited unexpectedly.\n")
     finally:
         sys.exit()
