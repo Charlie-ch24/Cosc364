@@ -8,6 +8,42 @@ import numpy as np
 
 FILE_EXTENSION = ".txt"
 
+def create_head(rID):
+    command = 1
+    verison = 2
+    rID = 0
+    command = command.to_bytes(1, byteorder='big')
+    verison = verison.to_bytes(1, byteorder='big')
+    rID = rID.to_bytes(2, byteorder='big')
+    header = bytearray(command + verison + rID)
+    return header
+
+def create_rip_entry(destID, metric):
+    address_fam_id = 0
+    zero = 0
+    address_fam_id = address_fam_id.to_bytes(2, byteorder='big')
+    zero_2b = zero.to_bytes(2, byteorder='big')
+    dest_ID = destID.to_bytes(4, byteorder='big')
+    zero_8b = zero.to_bytes(8, byteorder='big')
+    metric = metric.to_bytes(4, byteorder='big')
+
+    rip_entry = bytearray(address_fam_id + zero_2b + dest_ID + zero_8b + metric)
+    return rip_entry
+
+
+def create_packet(rID, destID, metric):
+    #request command = 1 but response command = 2
+    header = create_head(rID)
+    rip_entry = create_rip_entry(destID, metric)
+
+    return header + rip_entry
+
+    # Rip entry 20 bytes
+
+
+
+
+
 def read_config(filename):
     rID, inputs, outputs = None, None, None
     if filename.endswith(FILE_EXTENSION):
