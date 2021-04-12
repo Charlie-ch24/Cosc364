@@ -37,3 +37,9 @@ def read_config(filename):
 def is_valid_ports(ports):
     ports = np.array(ports)
     return np.all((ports >= 1024) & (ports <= 64000))
+
+def create_Rip_adv():
+    pass
+
+def process_Rip_adv(packet):
+    return []
