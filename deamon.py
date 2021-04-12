@@ -44,9 +44,10 @@ if __name__ == "__main__":
     except ValueError as v_err:
         print("Warning:", v_err)
     except KeyboardInterrupt:
-        print("\n***** Deamon exit successfully! Router shuting down... *****")
+        print("\n******** Deamon exit successfully! Router shuting down... ********")
     except Exception as e:
         traceback.print_exc() # Traceback unknown error
         print("Program exited unexpectedly.\n")
     finally:
+        print()
         sys.exit()

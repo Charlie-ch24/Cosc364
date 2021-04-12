@@ -19,7 +19,9 @@ Charlie Hunter: None
 
 ### Linux
 
--
+- Locate Project folder -> Right click -> Open in Terminal
+- Demo: `python3 deamon.py config_demo/router1`
+- Test: `python3 deamon.py config_test/test1`
 
 ## GIT command
 
@@ -31,6 +33,7 @@ Charlie Hunter: None
 
 | Test file | Content |
 |-----------|---------|
+| `random`  | Config file not exist |
 |  `test1`  | Invalid Router ID |
 |  `test2`  | Invalid Router Input port |
 |  `test3`  | Invalid Router Output port|
