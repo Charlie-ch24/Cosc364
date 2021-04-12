@@ -3,19 +3,29 @@ Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter ()
 Router main program
 """
+import random
 
 class Router:
     def __init__(self, rID, inputs, outputs):
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
-        self.ROUTING_TABLE = {}
+        self.ROUTING_TABLE = {} # {Dest: nxt Hop, metric, time, path}
         self.ROUTING_TABLE[rID] = [rID, 0, 0, None]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
             port, cost, dest = output.split('-')
             self.OUTPUT_PORTS[int(dest)] = (int(port), int(cost))
+
+    def update_route_table(self, routes):
+        """ Just testing """
+        flag = random.randint(0, 1)
+        if flag == 0:
+            rID = random.randint(1,7)
+            self.ROUTING_TABLE[7] = [rID, 7-rID, 0, None]
+            return True
+        return False
 
     def print_hello(self):      
         print("-" * 50)  

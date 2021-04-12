@@ -1,5 +1,7 @@
 *.code-workspace
 __pycache__/
+.vscode/
 .idea/
 .DS_Store
 *.pyc
+configReader.py
