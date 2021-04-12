@@ -19,11 +19,11 @@ class Router:
 
     def print_hello(self):      
         print("-" * 50)  
-        print(f"Router {self.ROUTER_ID} is running ...")
+        print("Router {0} is running ...".format(self.ROUTER_ID))
         print("Input ports:", self.INPUT_PORTS)
         print("Output ports:")
         for dest, link in self.OUTPUT_PORTS.items():
-            print(f"    {link} to Router ID {dest}")
+            print("    {0} to Router ID {1}".format(link, dest))
         print("-" * 50)
         print("Use Ctrl+C or Del to shutdown.")        
         print()
