@@ -23,7 +23,11 @@ class Router:
         print("Input ports:", self.INPUT_PORTS)
         print("Output ports:")
         for dest, link in self.OUTPUT_PORTS.items():
+<<<<<<< Updated upstream
             print("    {0} to Router ID {1}".format(link,dest))
+=======
+            print("    {0} to Router ID {1}".format(link, dest))
+>>>>>>> Stashed changes
         print("-" * 50)
         print("Use Ctrl+C or Del to shutdown.")        
         print()
