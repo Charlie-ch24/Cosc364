@@ -33,11 +33,13 @@ Charlie Hunter: None
 
 | Test file | Content |
 |-----------|---------|
-| `random`  | Config file not exist |
-|  `test1`  | Invalid Router ID |
-|  `test2`  | Invalid Router Input port |
-|  `test3`  | Invalid Router Output port|
+| `random`  | Config file not exist     |
+| `test1a`  | Invalid Router ID         |
+| `test1b`  | Invalid Router Input port |
+| `test1c`  | Invalid Router Output port|
+| `test2a`  | Missing 1 mandatory field |
+| `test2b`  | Missing mandatory fields  |
 
 ## Documatation
 
-- TODO
+- If Equal cost happen, and timer of existing record is half-way to time out, update to new route (3.9 pg 28). Thus at most 1 destination at a time.

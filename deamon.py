@@ -14,6 +14,11 @@ LocalHost = "127.0.0.1"
 ROUTER = None # Router Obj
 SOCKETS = [] # Enabled Interfaces
 
+TIMEOUT_send = [2, 10] # Min (random), max
+TIMEOUT_link = TIMEOUT_send[1] * 6
+
+Last_sent = -1
+
 ########## Body ##########
 def createSocket():
     for port in ROUTER.INPUT_PORTS:
@@ -21,28 +26,46 @@ def createSocket():
         sock.bind((LocalHost, port))
         SOCKETS.append(sock)
 
-def send(state):
+def send(is_updated):
     """ Send forwarding table to neighbour routers """
-    for sock in SOCKETS:
-        pass
-
+    global Last_sent
     status = "No-change"
-    if state is None:
+    if is_updated is None:
         status = "Default"
-    elif state is True:
+    elif is_updated:
         status = "Updated"
-    print(f"Routing Table ({status}) sent to neighbours.")
+        if (time.time() - Last_sent) < TIMEOUT_send[0]:
+            return
+    else:
+        if (time.time() - Last_sent) < TIMEOUT_send[1]:
+            return
 
-def receive(timeout = 3):
+    message = bytearray([0x1, 0x2])
+    for _, link in ROUTER.OUTPUT_PORTS.items():
+        dest = (LocalHost, link[0])
+        for sock in SOCKETS:
+            sock.sendto(message, dest)
+    
+    Last_sent = time.time()    
+    print(f"Routing Table ({status}) sent to neighbours at {time.strftime('%X')}.\n")
+
+def receive(timeout = 1):
     """ return True if some data received """
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
+    update_count = 0
     for sock in readable:
-        data, _ = sock.recvfrom(1024) # sender not needed
-        routes = system.process_Rip_adv(data)
-        ROUTER.update_route_table(routes)
-    # return True if len(readable) > 0 else False
-    routes = []
-    return ROUTER.update_route_table(routes)
+        data, sender = sock.recvfrom(1024)
+        if not ROUTER.is_expected_sender(sender):
+            # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
+            pass
+        else:
+            #print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
+            print(data)
+            routes = system.process_Rip_adv(data)
+            is_updated = ROUTER.update_route_table(routes)
+            if is_updated:
+                update_count += 1
+    return True if update_count > 0 else False
 
 ########## Program ##########
 def init_router():
@@ -51,12 +74,13 @@ def init_router():
     rID, inputs, outputs = system.read_config(filename)
 
     # Create Router instance with default routing table
-    ROUTER = Router(rID, inputs, outputs)
+    timestamp = time.time()
+    ROUTER = Router(rID, inputs, outputs, timestamp)
     ROUTER.print_hello()
 
     # First time notice to neighbours
     createSocket()
-    ROUTER.print_route_table()
+    ROUTER.print_route_table(True, timestamp, time.strftime('%X'))
     send(None) # periodic every 30 sec
     
 if __name__ == "__main__":
@@ -64,7 +88,8 @@ if __name__ == "__main__":
         init_router()
         while True:
             is_updated = receive()
-            ROUTER.print_route_table()
+            ROUTER.print_route_table(is_updated, time.time(), time.strftime('%X'))
+            # wait random time before trigger update
             send(is_updated)
     except IndexError:
         print("Error: Config file is not provided!")
