@@ -3,9 +3,9 @@ Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter ()
 Router main program
 """
-TIMEOUT_print = 5
 
 class Router:
+    TIMEOUT_print = 5
     def __init__(self, rID, inputs, outputs, ptime):
         self._lastPrint = -1
         self.ROUTER_ID = rID

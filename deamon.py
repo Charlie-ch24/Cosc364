@@ -14,10 +14,11 @@ LocalHost = "127.0.0.1"
 ROUTER = None # Router Obj
 SOCKETS = [] # Enabled Interfaces
 
-TIMEOUT_send = [2, 10] # Min (random), max
+TIMEOUT_send = [5, 10] # Min (random), max
 TIMEOUT_link = TIMEOUT_send[1] * 6
 
 Last_sent = -1
+Update_Flag = False
 
 ########## Body ##########
 def createSocket():
@@ -35,12 +36,13 @@ def send(is_updated):
     elif is_updated:
         status = "Updated"
         if (time.time() - Last_sent) < TIMEOUT_send[0]:
+            TIMEOUT_send[0] = random.randint(0,2)
             return
     else:
         if (time.time() - Last_sent) < TIMEOUT_send[1]:
             return
 
-    message = bytearray([0x1, 0x2])
+    message = bytearray([ROUTER.ROUTER_ID, 0x2, 0x9])
     for _, link in ROUTER.OUTPUT_PORTS.items():
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
@@ -59,7 +61,7 @@ def receive(timeout = 1):
             # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
             pass
         else:
-            #print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
+            # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
             print(data)
             routes = system.process_Rip_adv(data)
             is_updated = ROUTER.update_route_table(routes)
@@ -87,10 +89,10 @@ if __name__ == "__main__":
     try:
         init_router()
         while True:
-            is_updated = receive()
-            ROUTER.print_route_table(is_updated, time.time(), time.strftime('%X'))
-            # wait random time before trigger update
-            send(is_updated)
+            # Update router status only when not updated 
+            is_updated = receive() if not Update_Flag else Update_Flag
+            ROUTER.print_route_table(Update_Flag, time.time(), time.strftime('%X'))
+            send(Update_Flag)
     except IndexError:
         print("Error: Config file is not provided!")
     except FileNotFoundError:
