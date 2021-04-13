@@ -22,6 +22,8 @@ class Router:
 
     def update_route_table(self, routes):
         """ Just testing """
+        route = routes[0]
+        self.ROUTING_TABLE[route[0]] = route[1:]
         return True
 
     def is_expected_sender(self, sender):

@@ -55,20 +55,28 @@ def send(is_updated):
 def receive(timeout = 1):
     """ return True if some data received """
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
-    update_count = 0
-    for sock in readable:
-        data, sender = sock.recvfrom(1024)
-        if not ROUTER.is_expected_sender(sender):
-            # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
-            pass
-        else:
-            # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
-            print(data)
-            routes = system.process_Rip_adv(data)
-            is_updated = ROUTER.update_route_table(routes)
-            if is_updated:
-                update_count += 1
-    return True if update_count > 0 else False
+    # update_count = 0
+    # for sock in readable:
+    #     data, sender = sock.recvfrom(1024)
+    #     if not ROUTER.is_expected_sender(sender):
+    #         print(f"Droped message on {sender} -> {sock.getsockname()} link!")
+    #         pass
+    #     else:
+    #         print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
+    #         print(data)
+    #         routes = system.process_Rip_adv(data)
+    #         is_updated = ROUTER.update_route_table(routes)
+    #         if is_updated:
+    #             update_count += 1
+    # return True if update_count > 0 else False
+
+    routes = [
+        [7, 1, 1, 0.5, [7, 1]], 
+        [2, 7, 15, 0.5, [7, 1]],
+        [2, 7, 1, 0.5, [7, 1]]
+    ]
+    is_updated = ROUTER.update_route_table(routes)
+    return is_updated
 
 ########## Program ##########
 def init_router():
