@@ -22,8 +22,28 @@ class Router:
 
     def update_route_table(self, routes):
         """ Just testing """
-        route = routes[0]
-        self.ROUTING_TABLE[route[0]] = route[1:]
+        #route = routes[0]
+        #self.ROUTING_TABLE[route[0]] = route[1:]
+        #self.ROUTING_TABLE[route[0]] = routes[1:]
+
+        print(self.ROUTING_TABLE, "not added")
+
+        for route in routes:
+            if route[0] not in self.ROUTING_TABLE:
+                self.ROUTING_TABLE[route[0]] = [route[1], route[2], route[3], route[4]]
+                print(self.ROUTING_TABLE, "added")
+            if route[0] in self.ROUTING_TABLE:
+                if route[2] < self.ROUTING_TABLE[route[0]][1]:
+                    self.ROUTING_TABLE[route[0]] = [route[1], route[2], route[3], route[4]]
+                    print(self.ROUTING_TABLE, "added again")
+
+        return True
+
+
+
+
+
+
         return True
 
     def is_expected_sender(self, sender):

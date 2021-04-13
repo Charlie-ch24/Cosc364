@@ -70,10 +70,17 @@ def receive(timeout = 1):
     #             update_count += 1
     # return True if update_count > 0 else False
 
+    random_int_1 = random.randint(1,16)
+    random_int_2 = random.randint(1,16)
+    random_int_3 = random.randint(1,16)
+
+    random_dest = random.randint(1,7)
+    random_dest_1 = random.randint(1,7)
+    random_dest_ = random.randint(1, 7)
     routes = [
-        [7, 1, 1, 0.5, [7, 1]], 
-        [2, 7, 15, 0.5, [7, 1]],
-        [2, 7, 1, 0.5, [7, 1]]
+        [random_dest_, 1, random_int_1, 0.5, [7, 1]],
+        [random_dest_1, 7, random_int_2, 0.5, [2, 1]],
+        [random_dest, 7, random_int_3, 0.5, [2, 1]]
     ]
     is_updated = ROUTER.update_route_table(routes)
     return is_updated
