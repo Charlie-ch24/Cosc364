@@ -26,18 +26,14 @@ def send(state):
     packets = []
     head = system.create_head(ROUTER.ROUTER_ID)
     for out in ROUTER.OUTPUT_PORTS.items():
-        rip_entry = system.create_rip_entry(out[1][0], out[1][1])
+        rip_entry = system.create_rip_entry(out[0], out[1][0], out[1][1])
         packet = head + rip_entry
         packets.append(packet)
     for pack in packets:
         if system.packet_check(pack):
-            print("good")
+            True
         else:
-            print("uhoh")
-
-
-
-
+            True
 
     for sock in SOCKETS:
         pass
@@ -52,10 +48,14 @@ def send(state):
 def receive(timeout = 3):
     """ return True if some data received """
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
+    print("hello", readable)
     for sock in readable:
+        print("hi again")
         data, _ = sock.recvfrom(1024) # sender not needed
         routes = system.process_Rip_adv(data)
+        print("routes")
         ROUTER.update_route_table(routes)
+
     # return True if len(readable) > 0 else False
     routes = []
     return ROUTER.update_route_table(routes)
