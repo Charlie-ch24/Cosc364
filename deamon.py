@@ -23,15 +23,23 @@ def createSocket():
 
 def send(state):
     """ Send forwarding table to neighbour routers """
-    print("Hello")
+    packets = []
+    head = system.create_head(ROUTER.ROUTER_ID)
+    for out in ROUTER.OUTPUT_PORTS.items():
+        rip_entry = system.create_rip_entry(out[1][0], out[1][1])
+        packet = head + rip_entry
+        packets.append(packet)
+    for pack in packets:
+        if system.packet_check(pack):
+            print("good")
+        else:
+            print("uhoh")
 
-    head = system.create_head("1")
 
-    print(head, "Head")
+
 
 
     for sock in SOCKETS:
-        print(sock, "socks")
         pass
 
     status = "No-change"
