@@ -4,8 +4,8 @@ Team: Bach Vu (25082165), Charlie Hunter ()
 Router main program
 """
 
+TIMEOUT_print = 5
 class Router:
-    TIMEOUT_print = 5
     def __init__(self, rID, inputs, outputs, ptime):
         self._lastPrint = -1
         self.ROUTER_ID = rID
@@ -31,13 +31,13 @@ class Router:
         return False
 
     def print_hello(self):      
-        print("-" * 50)  
+        print("-"*66)  
         print(f"Router {self.ROUTER_ID} is running ...")
         print("Input ports:", self.INPUT_PORTS)
         print("Output ports:")
         for dest, link in self.OUTPUT_PORTS.items():
             print(f"    {link} to Router ID {dest}")
-        print("-" * 50)
+        print("-"*66)
         print("Use Ctrl+C or Del to shutdown.")        
         print()
 
@@ -47,10 +47,10 @@ class Router:
                 return
 
         print("="*66)
-        print("{:20}{} [{}] {:20}".format(" ", "ROUTING TABLE", strtime, " "))
+        print("|{:19}{} [{}]  {:19}|".format(" ", "ROUTING TABLE", strtime, " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
             "Dest.", "Next Hop", "Metric", "Time (s)", "Path"))
-        print("-"*66)
+        print("|" + "-"*64 + "|")
         for dest, record in self.ROUTING_TABLE.items():
             hop, cost, log_time, path = record
             duration = ptime - log_time

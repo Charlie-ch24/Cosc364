@@ -14,7 +14,7 @@ LocalHost = "127.0.0.1"
 ROUTER = None # Router Obj
 SOCKETS = [] # Enabled Interfaces
 
-TIMEOUT_send = [5, 10] # Min (random), max
+TIMEOUT_send = [2, 10] # Min (random), max
 TIMEOUT_link = TIMEOUT_send[1] * 6
 
 Last_sent = -1
@@ -29,7 +29,7 @@ def createSocket():
 
 def send(is_updated):
     """ Send forwarding table to neighbour routers """
-    global Last_sent
+    global Last_sent, Update_Flag
     status = "No-change"
     if is_updated is None:
         status = "Default"
@@ -48,7 +48,8 @@ def send(is_updated):
         for sock in SOCKETS:
             sock.sendto(message, dest)
     
-    Last_sent = time.time()    
+    Last_sent = time.time()
+    Update_Flag = False 
     print(f"Routing Table ({status}) sent to neighbours at {time.strftime('%X')}.\n")
 
 def receive(timeout = 1):
@@ -89,10 +90,11 @@ if __name__ == "__main__":
     try:
         init_router()
         while True:
-            # Update router status only when not updated 
-            is_updated = receive() if not Update_Flag else Update_Flag
-            ROUTER.print_route_table(Update_Flag, time.time(), time.strftime('%X'))
+            just_updated = receive()
+            Update_Flag = just_updated if not Update_Flag else Update_Flag
+            ROUTER.print_route_table(just_updated, time.time(), time.strftime('%X'))
             send(Update_Flag)
+
     except IndexError:
         print("Error: Config file is not provided!")
     except FileNotFoundError:
