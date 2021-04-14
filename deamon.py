@@ -49,9 +49,10 @@ def send(is_updated):
             if sock.getsockname()[1] % 10 == destID:
                 print(f"{sock.getsockname()} -> {destID}")
                 sock.sendto(message, dest)
+                break
     
     Last_sent = time.time()
-    Update_Flag = False 
+    Update_Flag = False
     print(f"Routing Table ({status}) sent to neighbours at {time.strftime('%X')}.\n")
 
 def receive(timeout = 1):
@@ -60,6 +61,7 @@ def receive(timeout = 1):
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
     update_count = 0
     for sock in readable:
+        print(sock.getsockname())
         data, sender = sock.recvfrom(1024)
         if not ROUTER.is_expected_sender(sender):
             # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
