@@ -11,14 +11,21 @@ class Router:
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
-        self.ROUTING_TABLE = {} # {Dest: nxt Hop, metric, time, path}
-        self.ROUTING_TABLE[rID] = [rID, 1, ptime, [rID]]
+        self._ROUTING_TABLE = {} # {Dest: nxt Hop, metric, time, path}
+        self._ROUTING_TABLE[rID] = [rID, 1, ptime, [rID]]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
             port, cost, dest = output.split('-')
             port, cost, dest = int(port), int(cost), int(dest)
             self.OUTPUT_PORTS[dest] = (port, cost)
+
+
+    def get_routing_table(self):
+        entries = []
+        for key, val in self._ROUTING_TABLE.items():
+            entries.append((key, val[0], val[1]))
+        return entries
 
     def update_route_table(self, routes):
         """ Just testing """
@@ -51,7 +58,7 @@ class Router:
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
             "Dest.", "Next Hop", "Metric", "Time (s)", "Path"))
         print("|" + "-"*64 + "|")
-        for dest, record in self.ROUTING_TABLE.items():
+        for dest, record in self._ROUTING_TABLE.items():
             hop, cost, log_time, path = record
             duration = ptime - log_time
             print("|{:^10}|{:^10}|{:^10}|{:^10.3f}|{:^20}|".format(

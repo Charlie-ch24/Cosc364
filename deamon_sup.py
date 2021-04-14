@@ -87,21 +87,23 @@ def process_rip_packet(packet):
 
     return routes
 
-table = [
-    [7, 2, 14],
-    [2, 5, 9],
-    [1, 6, 1],
-]
-packet = create_rip_packet(table)
-print()
-for route in process_rip_packet(packet):
-    print(route)
+def test():
+    table = [
+        [7, 2, 14],
+        [2, 5, 9],
+        [1, 6, 1],
+    ]
+    packet = create_rip_packet(table)
+    print()
+    for route in process_rip_packet(packet):
+        print(route)
+# test()
 
-def packet_check(packet):
-    "Makes sure packet doesnt have errors when converted"
-    r_id = int.from_bytes(packet[2:4], byteorder='big')
-    version = int.from_bytes(packet[1:2], byteorder='big')
-    command = int.from_bytes(packet[0:1], byteorder='big')
-    if is_valid_ports(dest_id) and (0 < r_id or r_id > 64000) and (version == 2):
-        return True
-    return False
+# def packet_check(packet):
+#     "Makes sure packet doesnt have errors when converted"
+#     r_id = int.from_bytes(packet[2:4], byteorder='big')
+#     version = int.from_bytes(packet[1:2], byteorder='big')
+#     command = int.from_bytes(packet[0:1], byteorder='big')
+#     if is_valid_ports(dest_id) and (0 < r_id or r_id > 64000) and (version == 2):
+#         return True
+#     return False
