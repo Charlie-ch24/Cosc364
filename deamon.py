@@ -42,7 +42,7 @@ def send(is_updated):
         if (time.time() - Last_sent) < TIMEOUT_send[1]:
             return
 
-    message = system.create_rip_packet(ROUTER.get_routing_table())
+    message = bytearray([ROUTER.ROUTER_ID, 0x2, 0x9])
     for destID, link in ROUTER.OUTPUT_PORTS.items():
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
@@ -57,19 +57,18 @@ def send(is_updated):
 
 def receive(timeout = 1):
     """ return True if some data received """
-    print("Waiting for incoming message ...")
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
     update_count = 0
     for sock in readable:
         print(sock.getsockname())
         data, sender = sock.recvfrom(1024)
         if not ROUTER.is_expected_sender(sender):
-            # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
+            print(f"Droped message on {sender} -> {sock.getsockname()} link!")
             pass
         else:
             print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
             print(data)
-            routes = system.process_rip_packet(data)
+            routes = system.process_Rip_adv(data)
             is_updated = ROUTER.update_route_table(routes)
             if is_updated:
                 update_count += 1

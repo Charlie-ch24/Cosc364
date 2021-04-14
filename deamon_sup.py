@@ -87,17 +87,15 @@ def process_rip_packet(packet):
 
     return routes
 
-def test():
-    table = [
-        [7, 2, 14],
-        [2, 5, 9],
-        [1, 6, 1],
-    ]
-    packet = create_rip_packet(table)
-    print()
-    for route in process_rip_packet(packet):
-        print(route)
-# test()
+table = [
+    [7, 2, 14],
+    [2, 5, 9],
+    [1, 6, 1],
+]
+packet = create_rip_packet(table)
+print()
+for route in process_rip_packet(packet):
+    print(route)
 
 # def packet_check(packet):
 #     "Makes sure packet doesnt have errors when converted"
