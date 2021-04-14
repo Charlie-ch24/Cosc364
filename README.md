@@ -42,6 +42,4 @@ Charlie Hunter: None
 
 ## Documatation
 
-- RIPv2 dont have request packet, only send its routing table as distance-vector. Thus `Command` and `Version` field will be constant (0 and 2).
 - If Equal cost happen, and timer of existing record is half-way to time out, update to new route (3.9 pg 28). Thus at most 1 destination at a time.
-- Assume link cost (from config) is hop metric.
