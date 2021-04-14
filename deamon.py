@@ -43,6 +43,7 @@ def send(is_updated):
             return
 
     message = bytearray([ROUTER.ROUTER_ID, 0x2, 0x9])
+    print(message)
     for destID, link in ROUTER.OUTPUT_PORTS.items():
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
@@ -60,15 +61,14 @@ def receive(timeout = 1):
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
     update_count = 0
     for sock in readable:
-        print(sock.getsockname())
         data, sender = sock.recvfrom(1024)
         if not ROUTER.is_expected_sender(sender):
-            print(f"Droped message on {sender} -> {sock.getsockname()} link!")
+            # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
             pass
         else:
-            print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
-            print(data)
+            # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
             routes = system.process_Rip_adv(data)
+            print(routes)
             is_updated = ROUTER.update_route_table(routes)
             if is_updated:
                 update_count += 1
