@@ -79,7 +79,6 @@ def receive(timeout = 1):
     return is_updated
 
 ########## Program ##########
-<<<<<<< Updated upstream
 def init_router():
     global ROUTER # include this if modifying global variable
     filename = sys.argv[1]
@@ -103,20 +102,6 @@ if __name__ == "__main__":
             Update_Flag = just_updated if not Update_Flag else Update_Flag
             ROUTER.print_route_table(just_updated, time.time(), time.strftime('%X'))
             send(Update_Flag)
-=======
-def main():
-    global ROUTER
-    print("hi")
-    try:
-        filename = sys.argv[1]
-        rID, inputs, outputs = system.read_config(filename)
-        rID = router_id_check(rID)
-        inputs = inputport_check(inputs)
-        output = output_check(outputs, inputs)
-
-        ROUTER = Router(rID, inputs, outputs)
-        print("Charlie Checking outputs", outputs)
->>>>>>> Stashed changes
 
     except IndexError:
         print("Error: Config file is not provided!")
