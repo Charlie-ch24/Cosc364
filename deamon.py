@@ -42,41 +42,38 @@ def send(is_updated):
         if (time.time() - Last_sent) < TIMEOUT_send[1]:
             return
 
-    message = bytearray([ROUTER.ROUTER_ID, 0x2, 0x9])
-    for _, link in ROUTER.OUTPUT_PORTS.items():
+    message = system.create_rip_packet(ROUTER.get_routing_table())
+    # print(system.process_rip_packet(message))
+    for destID, link in ROUTER.OUTPUT_PORTS.items():
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
-            sock.sendto(message, dest)
+            if sock.getsockname()[1] % 10 == destID:
+                print(f"{sock.getsockname()} -> {destID}")
+                sock.sendto(message, dest)
+                break
     
     Last_sent = time.time()
-    Update_Flag = False 
+    Update_Flag = False
     print(f"Routing Table ({status}) sent to neighbours at {time.strftime('%X')}.\n")
 
 def receive(timeout = 1):
     """ return True if some data received """
+    print("Waiting for incoming message ...")
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
-    # update_count = 0
-    # for sock in readable:
-    #     data, sender = sock.recvfrom(1024)
-    #     if not ROUTER.is_expected_sender(sender):
-    #         print(f"Droped message on {sender} -> {sock.getsockname()} link!")
-    #         pass
-    #     else:
-    #         print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
-    #         print(data)
-    #         routes = system.process_Rip_adv(data)
-    #         is_updated = ROUTER.update_route_table(routes)
-    #         if is_updated:
-    #             update_count += 1
-    # return True if update_count > 0 else False
-
-    routes = [
-        [7, 1, 1, 0.5, [7, 1]], 
-        [2, 7, 15, 0.5, [7, 1]],
-        [2, 7, 1, 0.5, [7, 1]]
-    ]
-    is_updated = ROUTER.update_route_table(routes)
-    return is_updated
+    update_count = 0
+    for sock in readable:
+        data, sender = sock.recvfrom(1024)
+        if not ROUTER.is_expected_sender(sender):
+            # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
+            pass
+        else:
+            # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
+            routes = system.process_rip_packet(data)
+            print(routes)
+            is_updated = ROUTER.update_route_table(routes)
+            if is_updated:
+                update_count += 1
+    return True if update_count > 0 else False
 
 ########## Program ##########
 def init_router():

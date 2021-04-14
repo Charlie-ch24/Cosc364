@@ -85,33 +85,73 @@ def is_valid_ports(ports):
     ports = np.array(ports)
     return np.all((ports >= 1024) & (ports <= 64000))
 
-def create_Rip_adv(ROUTER):
-    # Give router from config file and will return packets to send to outputs
-    head = create_head(ROUTER.ROUTER_ID)
-    packets = []
-    address_fam_id = 0
-    zero = 0
-    address_fam_id = address_fam_id.to_bytes(2, byteorder='big')
-    zero_8b = zero.to_bytes(8, byteorder='big')
-    for out in ROUTER.OUTPUT_PORTS.items():
-        route_tag = out[0].to_bytes(2, byteorder='big')
-        ip_add = out[1][0].to_bytes(4, byteorder='big')
-        cost = out[1][1].to_bytes(4, byteorder='big')
-        body = bytearray(address_fam_id + route_tag + ip_add + zero_8b + cost)
-        packet = head + body
-        packets.append(packet)
+def create_rip_packet(table):
+    header = create_rip_head()
+    print(header)
+    body = bytearray()
+    for entry in table:
+        new_entry = create_rip_entry(entry)
+        print(new_entry)
+        body += new_entry
+    return header + body
 
-    return packets
+def create_rip_head(TTL=0):
+    "Creates the 4 byte header"
+    command = 1
+    verison = 2
+    command = command.to_bytes(1, byteorder='big')
+    verison = verison.to_bytes(1, byteorder='big')
+    reserve = (TTL+1).to_bytes(2, byteorder='big')
+    return command + verison + reserve
 
-def process_Rip_adv(packet):
-    "Decodeds revecied packet"
-    route_table = []
-    metric = int.from_bytes(packet[20:24], byteorder='big')
-    dest_id = int.from_bytes(packet[8:12], byteorder='big')
-    r_id = int.from_bytes(packet[2:4], byteorder='big')
-    version = int.from_bytes(packet[1:2], byteorder='big')
+def create_rip_entry(entry):
+    "Creates the 20 byte body of packet"
+    address_fam, zero = 0, 0
+
+    afi         = address_fam.to_bytes(2, byteorder='big')
+    route_tag   =        zero.to_bytes(2, byteorder='big')
+    dest        =    entry[0].to_bytes(4, byteorder='big') # routerID
+    subnet      =        zero.to_bytes(4, byteorder='big')
+    next_hop    =    entry[1].to_bytes(4, byteorder='big')
+    metric      =    entry[2].to_bytes(4, byteorder='big')
+
+    return afi + route_tag + dest + subnet + next_hop + metric
+
+def process_rip_packet(packet):
     command = int.from_bytes(packet[0:1], byteorder='big')
-    if is_valid_ports(dest_id) and (0 < r_id or r_id > 64000) and (version == 2):
-        route_table.append(dest_id,r_id, metric)
-        return route_table
-    return False
+    version = int.from_bytes(packet[1:2], byteorder='big')
+    if command != 1 or version != 2:
+        return []
+
+    routes = []
+    entry_count = (len(packet)-4)//20
+    for i in range(entry_count):
+        si = i*20 + 4 # entry_start_index
+        dest_id  = int.from_bytes(packet[si+4:si+8], byteorder='big')
+        next_hop = int.from_bytes(packet[si+12:si+16], byteorder='big')
+        metric   = int.from_bytes(packet[si+16:si+20], byteorder='big')
+        routes.append([dest_id, next_hop, metric])
+
+    return routes
+
+def test():
+    table = [
+        [7, 2, 14],
+        [2, 5, 9],
+        [1, 6, 1],
+    ]
+    packet = create_rip_packet(table)
+    print()
+    for route in process_rip_packet(packet):
+        print(route)
+
+# test()
+
+# def packet_check(packet):
+#     "Makes sure packet doesnt have errors when converted"
+#     r_id = int.from_bytes(packet[2:4], byteorder='big')
+#     version = int.from_bytes(packet[1:2], byteorder='big')
+#     command = int.from_bytes(packet[0:1], byteorder='big')
+#     if is_valid_ports(dest_id) and (0 < r_id or r_id > 64000) and (version == 2):
+#         return True
+#     return False
