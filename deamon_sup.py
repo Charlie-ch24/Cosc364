@@ -74,7 +74,7 @@ def read_config(filename):
             if not is_valid_ports(inputs):
                 raise ValueError("Invalid input port(s) in config data.\nPorts must be between 1024 and 64000.")
         elif head == "outputs":
-            outputs = [port.strip() for port in data.rstrip().split(',')]            
+            outputs = [port.strip() for port in data.rstrip().split(',')]
             ports = [int(output.split('-')[0]) for output in outputs]
             if not is_valid_ports(ports):
                 raise ValueError("Invalid output port(s) in config data.\nPorts must be between 1024 and 64000.")
@@ -87,11 +87,11 @@ def is_valid_ports(ports):
 
 def create_rip_packet(table):
     header = create_rip_head()
-    print(header)
+    #print(table, "TABLE")
     body = bytearray()
     for entry in table:
         new_entry = create_rip_entry(entry)
-        print(new_entry)
+        #print(new_entry)
         body += new_entry
     return header + body
 
@@ -114,7 +114,7 @@ def create_rip_entry(entry):
     subnet      =        zero.to_bytes(4, byteorder='big')
     next_hop    =    entry[1].to_bytes(4, byteorder='big')
     metric      =    entry[2].to_bytes(4, byteorder='big')
-
+    #print(metric, "METRIC")
     return afi + route_tag + dest + subnet + next_hop + metric
 
 def process_rip_packet(packet):
@@ -130,11 +130,12 @@ def process_rip_packet(packet):
         dest_id  = int.from_bytes(packet[si+4:si+8], byteorder='big')
         next_hop = int.from_bytes(packet[si+12:si+16], byteorder='big')
         metric   = int.from_bytes(packet[si+16:si+20], byteorder='big')
+        #print(dest_id, metric, "Dest and Metric")
         routes.append([dest_id, next_hop, metric])
 
     return routes
 
-def test():
+"""def test():
     table = [
         [7, 2, 14],
         [2, 5, 9],
@@ -143,7 +144,7 @@ def test():
     packet = create_rip_packet(table)
     print()
     for route in process_rip_packet(packet):
-        print(route)
+        print(route)"""
 
 # test()
 

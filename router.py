@@ -1,3 +1,4 @@
+
 """
 Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter ()
@@ -19,6 +20,9 @@ class Router:
             port, cost, dest = output.split('-')
             port, cost, dest = int(port), int(cost), int(dest)
             self.OUTPUT_PORTS[dest] = (port, cost)
+        self.DISCOVER = {}
+        self.DISCOVER = self.OUTPUT_PORTS
+
 
     def get_routing_table(self):
         entries = []
@@ -28,6 +32,27 @@ class Router:
 
     def update_route_table(self, routes):
         """ Just testing """
+
+        print(routes, "ROUTES LIST")
+        #print(self._ROUTING_TABLE, "ROUTING TABLE")
+        print(self.OUTPUT_PORTS, "OUTPORTS")
+        print(self.INPUT_PORTS)
+        #print(self.DISCOVER, "Discover")
+
+        for route in routes:
+            i = -1
+            i += 1
+            if route[0] not in self._ROUTING_TABLE:
+                try:
+                    cost = self.OUTPUT_PORTS[route[0]][1]
+                    self._ROUTING_TABLE[route[0]] = [route[1], cost, 24, [route[0], routes[i-1][i]]]
+                except:
+                    #print(route[0], route[2], "EXCEPT STATE")
+                    self.DISCOVER[route[0]] = (route[0], route[2])
+                    cost = self.OUTPUT_PORTS[route[0]][1] + routes[i-1][2]
+                    self._ROUTING_TABLE[route[0]] = [route[0], cost, 1, 1]
+                    #print(self._ROUTING_TABLE)
+
         return True
 
     def is_expected_sender(self, sender):
@@ -36,15 +61,15 @@ class Router:
                 return True
         return False
 
-    def print_hello(self):      
-        print("-"*66)  
+    def print_hello(self):
+        print("-"*66)
         print(f"Router {self.ROUTER_ID} is running ...")
         print("Input ports:", self.INPUT_PORTS)
         print("Output ports:")
         for dest, link in self.OUTPUT_PORTS.items():
             print(f"    {link} to Router ID {dest}")
         print("-"*66)
-        print("Use Ctrl+C or Del to shutdown.")        
+        print("Use Ctrl+C or Del to shutdown.")
         print()
 
     def print_route_table(self, is_updated, ptime, strtime):
@@ -64,9 +89,4 @@ class Router:
                 dest, hop, cost, duration, str(path)))
         print("="*66)
         self._lastPrint = ptime
-
-
-
-
-
 
