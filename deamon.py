@@ -58,7 +58,6 @@ def send(is_updated):
 
 def receive(timeout = 1):
     """ return True if some data received """
-    print("Waiting for incoming message ...")
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
     update_count = 0
     for sock in readable:
@@ -95,6 +94,7 @@ if __name__ == "__main__":
     try:
         init_router()
         while True:
+            print("Waiting for incoming message ...")
             just_updated = receive()
             Update_Flag = just_updated if not Update_Flag else Update_Flag
             ROUTER.print_route_table(just_updated, time.time(), time.strftime('%X'))

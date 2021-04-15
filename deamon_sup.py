@@ -5,7 +5,6 @@ Router support function
 """
 import os, sys
 import numpy as np
-from router import *
 
 FILE_EXTENSION = ".txt"
 

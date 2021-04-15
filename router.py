@@ -5,10 +5,11 @@ Team: Bach Vu (25082165), Charlie Hunter ()
 Router main program
 """
 
-TIMEOUT_print = 5
 class Router:
     def __init__(self, rID, inputs, outputs, ptime):
         self._lastPrint = -1
+        self.TIMEOUT_print = 5
+
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
@@ -20,8 +21,9 @@ class Router:
             port, cost, dest = output.split('-')
             port, cost, dest = int(port), int(cost), int(dest)
             self.OUTPUT_PORTS[dest] = (port, cost)
-        self.DISCOVER = {}
-        self.DISCOVER = self.OUTPUT_PORTS
+
+        # self.DISCOVER = {}
+        # self.DISCOVER = self.OUTPUT_PORTS
 
 
 
@@ -44,14 +46,12 @@ class Router:
         #print(self.ROUTER_ID, "Router id")
 
         for route in routes:
-            i = -1
-            i += 1
             if route[0] not in self._ROUTING_TABLE:
                 try:
                     cost = self.OUTPUT_PORTS[route[0]][1]
                     self._ROUTING_TABLE[route[0]] = [route[1], cost, 24, ["need to fix", route[0]]]
                     return True
-                except:
+                except: # Key error Route table
                     cost = route[2] + self.OUTPUT_PORTS[route[1]][1]
                     if cost >= 16:
                         cost = 16
@@ -89,7 +89,7 @@ class Router:
 
     def print_route_table(self, is_updated, ptime, strtime):
         if not is_updated:
-            if (ptime - self._lastPrint) < TIMEOUT_print:
+            if (ptime - self._lastPrint) < self.TIMEOUT_print:
                 return
 
         print("="*66)
