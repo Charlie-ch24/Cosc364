@@ -12,8 +12,8 @@ class Router:
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
-        self._ROUTING_TABLE = {} # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = [rID, 1, ptime, [rID]]
+        self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
+        self._ROUTING_TABLE[rID] = [rID, 0, ptime, [rID]]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
@@ -24,20 +24,24 @@ class Router:
         self.DISCOVER = self.OUTPUT_PORTS
 
 
+
+
+
     def get_routing_table(self):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
-            entries.append((key, val[0], val[1]))
+            entries.append((key, self.ROUTER_ID, val[1]))
         return entries
 
     def update_route_table(self, routes):
         """ Just testing """
 
         print(routes, "ROUTES LIST")
-        #print(self._ROUTING_TABLE, "ROUTING TABLE")
+        print(self._ROUTING_TABLE, "ROUTING TABLE")
         print(self.OUTPUT_PORTS, "OUTPORTS")
-        print(self.INPUT_PORTS)
+        #print(self.INPUT_PORTS)
         #print(self.DISCOVER, "Discover")
+        #print(self.ROUTER_ID, "Router id")
 
         for route in routes:
             i = -1
@@ -45,15 +49,26 @@ class Router:
             if route[0] not in self._ROUTING_TABLE:
                 try:
                     cost = self.OUTPUT_PORTS[route[0]][1]
-                    self._ROUTING_TABLE[route[0]] = [route[1], cost, 24, [route[0], routes[i-1][i]]]
+                    self._ROUTING_TABLE[route[0]] = [route[1], cost, 24, ["need to fix", route[0]]]
+                    return True
                 except:
-                    #print(route[0], route[2], "EXCEPT STATE")
-                    self.DISCOVER[route[0]] = (route[0], route[2])
-                    cost = self.OUTPUT_PORTS[route[0]][1] + routes[i-1][2]
-                    self._ROUTING_TABLE[route[0]] = [route[0], cost, 1, 1]
-                    #print(self._ROUTING_TABLE)
+                    cost = route[2] + self.OUTPUT_PORTS[route[1]][1]
+                    if cost >= 16:
+                        cost = 16
+                    self._ROUTING_TABLE[route[0]] = [route[0], cost , 1, "error occured"]
 
-        return True
+                if self._ROUTING_TABLE[route[0]][1] > (route[2] + self.OUTPUT_PORTS[route[1]][1]):
+                    cost = route[2] + self.OUTPUT_PORTS[route[1]][1]
+                    self._ROUTING_TABLE[route[0]] = [route[0], cost, 1, "error occured"] # if new path costs less than old
+
+
+
+
+
+
+
+
+        return False
 
     def is_expected_sender(self, sender):
         for link in self.OUTPUT_PORTS.values():

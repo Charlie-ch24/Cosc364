@@ -107,7 +107,7 @@ def create_rip_head(TTL=0):
 def create_rip_entry(entry):
     "Creates the 20 byte body of packet"
     address_fam, zero = 0, 0
-
+    #print(entry, "ENTRY")
     afi         = address_fam.to_bytes(2, byteorder='big')
     route_tag   =        zero.to_bytes(2, byteorder='big')
     dest        =    entry[0].to_bytes(4, byteorder='big') # routerID
