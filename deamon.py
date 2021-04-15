@@ -35,7 +35,7 @@ def send():
 
 def send_periodic():
     """ Execute periodically """
-    if not ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT):
+    if not ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT, time.time()):
         return
 
     send()
