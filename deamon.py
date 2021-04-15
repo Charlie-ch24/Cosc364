@@ -41,7 +41,7 @@ def send(is_updated):
     else:
         if (time.time() - Last_sent) < TIMEOUT_send[1]:
             return
-
+    #print(ROUTER.get_routing_table(), "ROUTER.get_routing_table()")
     message = system.create_rip_packet(ROUTER.get_routing_table())
     # print(system.process_rip_packet(message))
     for destID, link in ROUTER.OUTPUT_PORTS.items():
@@ -51,7 +51,7 @@ def send(is_updated):
                 print(f"{sock.getsockname()} -> {destID}")
                 sock.sendto(message, dest)
                 break
-    
+
     Last_sent = time.time()
     Update_Flag = False
     print(f"Routing Table ({status}) sent to neighbours at {time.strftime('%X')}.\n")
@@ -69,7 +69,7 @@ def receive(timeout = 1):
         else:
             # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
             routes = system.process_rip_packet(data)
-            print(routes)
+            #print(routes, "Hello")
             is_updated = ROUTER.update_route_table(routes)
             if is_updated:
                 update_count += 1
@@ -81,7 +81,7 @@ def init_router():
     filename = sys.argv[1]
     rID, inputs, outputs = system.read_config(filename)
 
-    # Create Router instance with default routing table
+    #  Router instance with default routing table
     timestamp = time.time()
     ROUTER = Router(rID, inputs, outputs, timestamp)
     ROUTER.print_hello()
@@ -90,7 +90,7 @@ def init_router():
     createSocket()
     ROUTER.print_route_table(True, timestamp, time.strftime('%X'))
     send(None) # periodic every 30 sec
-    
+
 if __name__ == "__main__":
     try:
         init_router()
