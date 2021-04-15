@@ -41,14 +41,16 @@ def send(is_updated):
     else:
         if (time.time() - Last_sent) < TIMEOUT_send[1]:
             return
-    #print(ROUTER.get_routing_table(), "ROUTER.get_routing_table()")
-    message = system.create_rip_packet(ROUTER.get_routing_table())
+
+    # print(ROUTER.get_routing_table(), "ROUTER.get_routing_table()")
     # print(system.process_rip_packet(message))
     for destID, link in ROUTER.OUTPUT_PORTS.items():
+        table = ROUTER.get_routing_table(destID)
+        message = system.create_rip_packet(table)
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
             if sock.getsockname()[1] % 10 == destID:
-                print(f"{sock.getsockname()} -> {destID}")
+                # print(f"{sock.getsockname()} -> {destID}")
                 sock.sendto(message, dest)
                 break
 
@@ -58,7 +60,6 @@ def send(is_updated):
 
 def receive(timeout = 1):
     """ return True if some data received """
-    print("Waiting for incoming message ...")
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
     update_count = 0
     for sock in readable:
@@ -69,8 +70,7 @@ def receive(timeout = 1):
         else:
             # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
             routes = system.process_rip_packet(data)
-            #print(routes, "Hello")
-            is_updated = ROUTER.update_route_table(routes)
+            is_updated = ROUTER.update_route_table(routes, time.time())
             if is_updated:
                 update_count += 1
     return True if update_count > 0 else False
@@ -95,6 +95,7 @@ if __name__ == "__main__":
     try:
         init_router()
         while True:
+            print("Waiting for incoming message ...")
             just_updated = receive()
             Update_Flag = just_updated if not Update_Flag else Update_Flag
             ROUTER.print_route_table(just_updated, time.time(), time.strftime('%X'))
