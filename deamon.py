@@ -9,13 +9,11 @@ import socket, select
 import sys, time, random # must use
 import traceback # optional features
 from router import *
+from timer import *
 
 LocalHost = "127.0.0.1"
 ROUTER = None # Router Obj
 SOCKETS = [] # Enabled Interfaces
-
-Last_sent = -1
-Update_Flag = False
 
 ########## Body ##########
 def createSocket():
@@ -24,21 +22,8 @@ def createSocket():
         sock.bind((LocalHost, port))
         SOCKETS.append(sock)
 
-def send(is_updated):
+def send():
     """ Send forwarding table to neighbour routers """
-    global Last_sent, Update_Flag
-    status = "No-change"
-    if is_updated is None:
-        status = "Default"
-    elif is_updated:
-        status = "Updated"
-        if (time.time() - Last_sent) < ROUTER.get_update_timeout():
-            print("Delay before sending update")
-            return
-    else:
-        if (time.time() - Last_sent) < ROUTER.get_periodic_timeout():
-            return
-
     for destID, link in ROUTER.OUTPUT_PORTS.items():
         table = ROUTER.get_routing_table(destID)
         message = system.create_rip_packet(table)
@@ -48,26 +33,37 @@ def send(is_updated):
                 sock.sendto(message, dest)
                 break
 
-    Last_sent = time.time()
-    Update_Flag = False
-    print(f"Routing Table ({status}) sent to neighbours at {time.strftime('%X')}.\n")
+def send_periodic():
+    """ Execute periodically """
+    if not ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT):
+        return
+
+    send()
+    ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT) # Reset timer after sent to all neighbour
+    print(f"Routing Table (periodic) sent to neighbours at {time.strftime('%X')}.\n")
+
+def send_expired_entry():
+    """ Check and send if at least 1 entry expired """
+    if not ROUTER.has_expired_entry():
+        return
+
+    send()
+    ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT) # Reset timer
+    print(f"Routing Table (expiry) sent to neighbours at {time.strftime('%X')}.\n")
+
+def garbage_collection():
+    ROUTER.garbage_collection()
 
 def receive(timeout = 1):
-    """ return True if some data received """
+    """ Return True if some data received """
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
-    update_count = 0
     for sock in readable:
         data, sender = sock.recvfrom(1024)
         if not ROUTER.is_expected_sender(sender):
-            # print(f"Droped message on {sender} -> {sock.getsockname()} link!")
-            pass
-        else:
-            # print(f"Accepted message on {sender} -> {sock.getsockname()} link!")
-            routes = system.process_rip_packet(data)
-            is_updated = ROUTER.update_route_table(routes, time.time())
-            if is_updated:
-                update_count += 1
-    return True if update_count > 0 else False
+            print(f"Droped message on {sender} -> {sock.getsockname()} link!")
+            continue
+        routes = system.process_rip_packet(data)
+        ROUTER.update_route_table(routes, time.time())
 
 ########## Program ##########
 def init_router():
@@ -82,18 +78,19 @@ def init_router():
 
     # First time notice to neighbours
     createSocket()
-    ROUTER.print_route_table(True, timestamp, time.strftime('%X'))
-    send(None) # periodic every 30 sec
+    ROUTER.print_route_table(timestamp, time.strftime('%X'))
+    send_periodic()
 
 if __name__ == "__main__":
     try:
         init_router()
         while True:
             print("Waiting for incoming message ...")
-            just_updated = receive()
-            Update_Flag = just_updated if not Update_Flag else Update_Flag
-            ROUTER.print_route_table(just_updated, time.time(), time.strftime('%X'))
-            send(Update_Flag)
+            receive()
+            ROUTER.print_route_table(time.time(), time.strftime('%X'))
+            send_expired_entry()
+            send_periodic()
+            garbage_collection()
 
     except IndexError:
         print("Error: Config file is not provided!")

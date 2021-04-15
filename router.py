@@ -1,20 +1,20 @@
-
 """
 Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
+from timer import *
 
 class Router:
     def __init__(self, rID, inputs, outputs, startTime, timeout):
-        self._lastPrint = -1
-        self._timeout = timeout if timeout is not None else 20
+        _timeout = timeout if timeout is not None else 20
+        self.timer = RTimer(_timeout)
 
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = [rID, 0, startTime, []]
+        self._ROUTING_TABLE[rID] = [rID, 0, startTime, ["Time Active"]]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
@@ -30,10 +30,8 @@ class Router:
         return entries
 
     def update_route_table(self, routes, time):
-        """ Just testing """
         print("INCOMING ROUTES", routes)
 
-        is_updated = False # True if at least 1 entry updated
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
@@ -44,21 +42,23 @@ class Router:
             
             if exist_entry is None:
                 new_entry[-1] = ["New dest."]
-                self._ROUTING_TABLE[dest] = new_entry
-                is_updated = True
             elif new_metric < exist_entry[1]:
                 new_entry[-1] = ["Shorter route"]
-                self._ROUTING_TABLE[dest] = new_entry
-                is_updated = True
             elif new_metric == exist_entry[1]:
-                new_entry[-1] = ["Reset timer"]
                 if new_entry[0] != exist_entry[0]:
                     new_entry[-1] = ["New route, same cost"]
-                    is_updated = True
-                self._ROUTING_TABLE[dest] = new_entry
-                # If not new route (just reset timer) then don't raise updat flag
+                else:
+                    new_entry[-1] = ["Reset timer"]
+            self._ROUTING_TABLE[dest] = new_entry
 
-        return is_updated
+
+    def garbage_collection(self):
+        pass
+
+    def has_expired_entry(self):
+        garbages = []
+
+        return len(garbages) < 0
 
     def is_expected_sender(self, sender):
         for link in self.OUTPUT_PORTS.values():
@@ -77,11 +77,10 @@ class Router:
         print("Use Ctrl+C or Del to shutdown.")
         print()
 
-    def print_route_table(self, is_updated, ptime, strtime):
-        if not is_updated:
-            if (ptime - self._lastPrint) < self.get_print_timeout():
-                return
-
+    def print_route_table(self, ptime, strtime):
+        if not self.timer.is_expired(RTimer.PRINT_TIMEOUT, ptime):
+            return
+            
         print("="*66)
         print("|{:19}{} [{}]  {:19}|".format(" ", "ROUTING TABLE", strtime, " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
@@ -92,19 +91,11 @@ class Router:
             duration = ptime - log_time
             print("|{:^10}|{:^10}|{:^10}|{:^10.3f}|{:^20}|".format(
                 dest, hop, cost, duration, str(path)))
-            record[3] = []
         print("="*66)
-        self._lastPrint = ptime
+        self.timer.reset_timer(RTimer.PRINT_TIMEOUT)
 
-    def get_print_timeout(self):
-        return self._timeout / 2
+    def reset_timer(self, mode):
+        self.timer.reset_timer(mode)
 
-    def get_garbage_timeout(self):
-        return self._timeout * 6
-
-    def get_periodic_timeout(self):
-        return self._timeout
-
-    def get_update_timeout(self):
-        return self._timeout / 5
-
+    def is_expired(self, mode, curr_time):
+        return self.timer.is_expired(mode, curr_time)
