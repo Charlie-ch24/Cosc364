@@ -1,6 +1,6 @@
 """
 Assignment 1: RIP protocol
-Team: Bach Vu (25082165), Charlie Hunter ()
+Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 ########## Header ##########
@@ -13,9 +13,6 @@ from router import *
 LocalHost = "127.0.0.1"
 ROUTER = None # Router Obj
 SOCKETS = [] # Enabled Interfaces
-
-TIMEOUT_send = [2, 10] # Min (random), max
-TIMEOUT_link = TIMEOUT_send[1] * 6
 
 Last_sent = -1
 Update_Flag = False
@@ -35,22 +32,19 @@ def send(is_updated):
         status = "Default"
     elif is_updated:
         status = "Updated"
-        if (time.time() - Last_sent) < TIMEOUT_send[0]:
-            TIMEOUT_send[0] = random.randint(0,2)
+        if (time.time() - Last_sent) < ROUTER.get_update_timeout():
+            print("Delay before sending update")
             return
     else:
-        if (time.time() - Last_sent) < TIMEOUT_send[1]:
+        if (time.time() - Last_sent) < ROUTER.get_periodic_timeout():
             return
 
-    # print(ROUTER.get_routing_table(), "ROUTER.get_routing_table()")
-    # print(system.process_rip_packet(message))
     for destID, link in ROUTER.OUTPUT_PORTS.items():
         table = ROUTER.get_routing_table(destID)
         message = system.create_rip_packet(table)
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
             if sock.getsockname()[1] % 10 == destID:
-                # print(f"{sock.getsockname()} -> {destID}")
                 sock.sendto(message, dest)
                 break
 
@@ -79,11 +73,11 @@ def receive(timeout = 1):
 def init_router():
     global ROUTER # include this if modifying global variable
     filename = sys.argv[1]
-    rID, inputs, outputs = system.read_config(filename)
+    rID, inputs, outputs, timeout = system.read_config(filename)
 
     #  Router instance with default routing table
     timestamp = time.time()
-    ROUTER = Router(rID, inputs, outputs, timestamp)
+    ROUTER = Router(rID, inputs, outputs, timestamp, timeout)
     ROUTER.print_hello()
 
     # First time notice to neighbours

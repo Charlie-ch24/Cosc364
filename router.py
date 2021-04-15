@@ -1,20 +1,20 @@
 
 """
 Assignment 1: RIP protocol
-Team: Bach Vu (25082165), Charlie Hunter ()
+Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 
 class Router:
-    def __init__(self, rID, inputs, outputs, ptime):
+    def __init__(self, rID, inputs, outputs, startTime, timeout):
         self._lastPrint = -1
-        self.TIMEOUT_print = 5
+        self._timeout = timeout if timeout is not None else 20
 
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = [rID, 0, ptime, []]
+        self._ROUTING_TABLE[rID] = [rID, 0, startTime, []]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
@@ -31,8 +31,7 @@ class Router:
 
     def update_route_table(self, routes, time):
         """ Just testing """
-
-        print(routes, "ROUTES LIST")
+        print("INCOMING ROUTES", routes)
 
         is_updated = False # True if at least 1 entry updated
         for route in routes:
@@ -80,7 +79,7 @@ class Router:
 
     def print_route_table(self, is_updated, ptime, strtime):
         if not is_updated:
-            if (ptime - self._lastPrint) < self.TIMEOUT_print:
+            if (ptime - self._lastPrint) < self.get_print_timeout():
                 return
 
         print("="*66)
@@ -96,4 +95,16 @@ class Router:
             record[3] = []
         print("="*66)
         self._lastPrint = ptime
+
+    def get_print_timeout(self):
+        return self._timeout / 2
+
+    def get_garbage_timeout(self):
+        return self._timeout * 6
+
+    def get_periodic_timeout(self):
+        return self._timeout
+
+    def get_update_timeout(self):
+        return self._timeout / 5
 

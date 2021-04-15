@@ -1,6 +1,6 @@
 """
 Assignment 1: RIP protocol
-Team: Bach Vu (25082165), Charlie Hunter ()
+Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router support function
 """
 import os, sys
@@ -9,7 +9,7 @@ import numpy as np
 FILE_EXTENSION = ".txt"
 
 def read_config(filename):
-    rID, inputs, outputs = None, None, None
+    rID, inputs, outputs, timeout = None, None, None, None
     if filename.endswith(FILE_EXTENSION):
         config_file = open(filename)
     else:
@@ -31,8 +31,12 @@ def read_config(filename):
             ports = [int(output.split('-')[0]) for output in outputs]
             if not is_valid_ports(ports):
                 raise ValueError("Invalid output port(s) in config data.\nPorts must be between 1024 and 64000.")
+        elif head == "timer":
+            timeout = int(data)
+            if not 0 < rID or rID > 30:
+                raise ValueError("Timeout must be between 1 and 30.")
 
-    return rID, inputs, outputs
+    return rID, inputs, outputs, timeout
 
 def is_valid_ports(ports):
     ports = np.array(ports)
@@ -87,6 +91,10 @@ def process_rip_packet(packet):
         routes.append((dest_id, next_hop, metric))
 
     return routes
+
+
+def packet_check():
+    pass
 
 """def test():
     table = [
