@@ -84,7 +84,7 @@ def process_rip_packet(packet):
         next_hop = int.from_bytes(packet[si+12:si+16], byteorder='big')
         metric   = int.from_bytes(packet[si+16:si+20], byteorder='big')
         #print(dest_id, metric, "Dest and Metric")
-        routes.append([dest_id, next_hop, metric])
+        routes.append((dest_id, next_hop, metric))
 
     return routes
 

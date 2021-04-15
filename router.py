@@ -14,7 +14,7 @@ class Router:
         self.INPUT_PORTS = inputs
 
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = [rID, 0, ptime, [rID]]
+        self._ROUTING_TABLE[rID] = [rID, 0, ptime, []]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
@@ -22,53 +22,44 @@ class Router:
             port, cost, dest = int(port), int(cost), int(dest)
             self.OUTPUT_PORTS[dest] = (port, cost)
 
-        # self.DISCOVER = {}
-        # self.DISCOVER = self.OUTPUT_PORTS
-
-
-
-
-
-    def get_routing_table(self):
+    def get_routing_table(self, dest):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
-            entries.append((key, self.ROUTER_ID, val[1]))
+            if dest != key:
+                entries.append((key, self.ROUTER_ID, val[1]))
         return entries
 
-    def update_route_table(self, routes):
+    def update_route_table(self, routes, time):
         """ Just testing """
 
         print(routes, "ROUTES LIST")
-        print(self._ROUTING_TABLE, "ROUTING TABLE")
-        print(self.OUTPUT_PORTS, "OUTPORTS")
-        #print(self.INPUT_PORTS)
-        #print(self.DISCOVER, "Discover")
-        #print(self.ROUTER_ID, "Router id")
 
+        is_updated = False # True if at least 1 entry updated
         for route in routes:
-            if route[0] not in self._ROUTING_TABLE:
-                try:
-                    cost = self.OUTPUT_PORTS[route[0]][1]
-                    self._ROUTING_TABLE[route[0]] = [route[1], cost, 24, ["need to fix", route[0]]]
-                    return True
-                except: # Key error Route table
-                    cost = route[2] + self.OUTPUT_PORTS[route[1]][1]
-                    if cost >= 16:
-                        cost = 16
-                    self._ROUTING_TABLE[route[0]] = [route[0], cost , 1, "error occured"]
+            dest, nxtHop, metric = route
+            new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
+            new_metric = 16 if new_metric > 16 else new_metric
 
-                if self._ROUTING_TABLE[route[0]][1] > (route[2] + self.OUTPUT_PORTS[route[1]][1]):
-                    cost = route[2] + self.OUTPUT_PORTS[route[1]][1]
-                    self._ROUTING_TABLE[route[0]] = [route[0], cost, 1, "error occured"] # if new path costs less than old
+            new_entry = [nxtHop, new_metric, time, []]
+            exist_entry = self._ROUTING_TABLE.get(dest, None)
+            
+            if exist_entry is None:
+                new_entry[-1] = ["New dest."]
+                self._ROUTING_TABLE[dest] = new_entry
+                is_updated = True
+            elif new_metric < exist_entry[1]:
+                new_entry[-1] = ["Shorter route"]
+                self._ROUTING_TABLE[dest] = new_entry
+                is_updated = True
+            elif new_metric == exist_entry[1]:
+                new_entry[-1] = ["Reset timer"]
+                if new_entry[0] != exist_entry[0]:
+                    new_entry[-1] = ["New route, same cost"]
+                    is_updated = True
+                self._ROUTING_TABLE[dest] = new_entry
+                # If not new route (just reset timer) then don't raise updat flag
 
-
-
-
-
-
-
-
-        return False
+        return is_updated
 
     def is_expected_sender(self, sender):
         for link in self.OUTPUT_PORTS.values():
@@ -95,13 +86,14 @@ class Router:
         print("="*66)
         print("|{:19}{} [{}]  {:19}|".format(" ", "ROUTING TABLE", strtime, " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
-            "Dest.", "Next Hop", "Metric", "Time (s)", "Path"))
+            "Dest.", "Next Hop", "Metric", "Time (s)", "Notes"))
         print("|" + "-"*64 + "|")
         for dest, record in self._ROUTING_TABLE.items():
             hop, cost, log_time, path = record
             duration = ptime - log_time
             print("|{:^10}|{:^10}|{:^10}|{:^10.3f}|{:^20}|".format(
                 dest, hop, cost, duration, str(path)))
+            record[3] = []
         print("="*66)
         self._lastPrint = ptime
 
