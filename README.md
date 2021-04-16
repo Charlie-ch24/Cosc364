@@ -2,7 +2,7 @@
 
 Assignment 1 RIP protocol
 Bach Vu: 25082165
-Charlie Hunter: None
+Charlie Hunter: 27380476
 
 ## Run command
 
@@ -45,3 +45,6 @@ Charlie Hunter: None
 - RIPv2 dont have request packet, only send its routing table as distance-vector. Thus `Command` and `Version` field will be constant (0 and 2).
 - If Equal cost happen, and timer of existing record is half-way to time out, update to new route (3.9 pg 28). Thus at most 1 destination at a time.
 - Assume link cost (from config) is hop metric.
+- Implement triggered updates only when routes become invalid (i.e. when a router
+sets the routes metric to 16 for whatever reason, compare end of page 24 and
+beginning of page 25 in [1]), not for other metric updates or new routes.

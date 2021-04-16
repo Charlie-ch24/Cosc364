@@ -1,3 +1,4 @@
 router-id: 2
 input-ports: 2201, 2203, 2204, 2205, 2206, 2207
 outputs: 1102-1-1, 3302-3-3
+timer: 5
