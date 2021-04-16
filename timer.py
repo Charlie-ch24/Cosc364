@@ -20,21 +20,24 @@ class RTimer:
 
     def get_periodic_timeout(self):
         """ From config, Ripv2 value 30 +- (0,5) """
-        return self._timeout * (1- random.uniform(-1/6, 1/6))
+        return self._timeout * (1- random.uniform(-1/5, 1/5))
 
     def get_entry_timeout(self):
         """ Expiry of a routing entry. Ripv2 value 180 """
-        return self._timeout * 6
+        return self._timeout * 3
 
     def get_garbage_timeout(self):
         """ Delete expired entry delay. Ripv2 value 120 """
-        return self._timeout * 2/3
+        return self._timeout * 4
 
     def reset_timer(self, mode):
         self._time_logs[mode] = time.time()
 
-    def is_expired(self, mode, curr_time):
+    def is_expired(self, mode, curr_time, ttl=None):
         """ Check time log """
+        curr_time = curr_time.timestamp()
+        if ttl is not None:
+            self._time_logs[mode] = ttl
         if self._time_logs[mode] == -1:
             return True
 

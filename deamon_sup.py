@@ -5,6 +5,7 @@ Router support function
 """
 import os, sys
 import numpy as np
+from datetime import datetime
 
 FILE_EXTENSION = ".txt"
 
@@ -92,9 +93,14 @@ def process_rip_packet(packet):
 
     return routes
 
-
 def packet_check():
     pass
+
+def strCurrTime(time=None):
+    if time is None:
+        return datetime.now().strftime('%H:%M:%S.%f')[:-3]
+    else:
+        return time.strftime('%H:%M:%S.%f')[:-3]
 
 """def test():
     table = [

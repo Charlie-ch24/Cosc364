@@ -3,12 +3,14 @@ Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
-from timer import *
+from timer import RTimer
+from deamon_sup import strCurrTime as strtime
 
 class Router:
     def __init__(self, rID, inputs, outputs, startTime, timeout):
         _timeout = timeout if timeout is not None else 20
         self.timer = RTimer(_timeout)
+        self._garbages = [] # (dest, time since expired)
 
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
@@ -29,15 +31,15 @@ class Router:
                 entries.append((key, self.ROUTER_ID, val[1]))
         return entries
 
-    def update_route_table(self, routes, time):
-        print("INCOMING ROUTES", routes)
+    def update_route_table(self, routes, utime):
+        print(f"Received ROUTES {str(routes)} at {strtime(utime)}")
 
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
             new_metric = 16 if new_metric > 16 else new_metric
 
-            new_entry = [nxtHop, new_metric, time, []]
+            new_entry = [nxtHop, new_metric, utime.timestamp(), []]
             exist_entry = self._ROUTING_TABLE.get(dest, None)
             
             if exist_entry is None:
@@ -52,13 +54,29 @@ class Router:
             self._ROUTING_TABLE[dest] = new_entry
 
 
-    def garbage_collection(self):
-        pass
+    def garbage_collection(self, gtime):
+        for item, time in self._garbages.copy():
+            if self.timer.is_expired(RTimer.GARBAGE_TIMEOUT, gtime, time):
+                self._ROUTING_TABLE.pop(item, None)
+                self._garbages.remove((item, time))
+                print(f"Removed dead link to {item} at {strtime(gtime)}")
 
-    def has_expired_entry(self):
-        garbages = []
+    def has_expired_entry(self, etime):
+        for dest,entry in self._ROUTING_TABLE.items():
+            if dest == self.ROUTER_ID:
+                continue
 
-        return len(garbages) < 0
+            _, metric, ttl, _ = entry
+            if metric == 16:
+                continue
+
+            if self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
+                self._ROUTING_TABLE[dest][1] = 16 # set to infinity
+                self._garbages.append((dest, ttl))
+                print(self._garbages)
+                print(self._ROUTING_TABLE)
+                print(f"Found expired link to {dest} at {strtime(etime)}")
+        return len(self._garbages) < 0
 
     def is_expected_sender(self, sender):
         for link in self.OUTPUT_PORTS.values():
@@ -77,18 +95,18 @@ class Router:
         print("Use Ctrl+C or Del to shutdown.")
         print()
 
-    def print_route_table(self, ptime, strtime):
+    def print_route_table(self, ptime):
         if not self.timer.is_expired(RTimer.PRINT_TIMEOUT, ptime):
             return
             
         print("="*66)
-        print("|{:19}{} [{}]  {:19}|".format(" ", "ROUTING TABLE", strtime, " "))
+        print("|{:16}--{} [{}]--{:16}|".format(" ", "ROUTING TABLE", strtime(ptime), " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
             "Dest.", "Next Hop", "Metric", "Time (s)", "Notes"))
         print("|" + "-"*64 + "|")
         for dest, record in self._ROUTING_TABLE.items():
             hop, cost, log_time, path = record
-            duration = ptime - log_time
+            duration = ptime.timestamp() - log_time
             print("|{:^10}|{:^10}|{:^10}|{:^10.3f}|{:^20}|".format(
                 dest, hop, cost, duration, str(path)))
         print("="*66)
