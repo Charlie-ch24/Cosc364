@@ -10,7 +10,7 @@ class Router:
     def __init__(self, rID, inputs, outputs, startTime, timeout):
         _timeout = timeout if timeout is not None else 20
         self.timer = RTimer(_timeout)
-        self._garbages = [] # (dest, time since expired)
+        self._garbages = {} # (dest, time since expired)
 
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
@@ -27,8 +27,10 @@ class Router:
     def get_routing_table(self, dest):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
-            if dest != key:
-                entries.append((key, self.ROUTER_ID, val[1]))
+            if dest == val[1]:
+                # don't re-advertise info from a hop
+                continue
+            entries.append((key, self.ROUTER_ID, val[1]))
         return entries
 
     def update_route_table(self, routes, utime):
@@ -37,36 +39,42 @@ class Router:
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
-            
             if metric < 16 and new_metric >= 16:
                 # unreachable, deadlink update will have metric = 16
                 continue
-            new_metric = 16 if new_metric > 16 else new_metric
 
+            new_metric = 16 if new_metric > 16 else new_metric            
             new_entry = [nxtHop, new_metric, utime.timestamp(), []]
-            exist_entry = self._ROUTING_TABLE.get(dest, None)
+            exist_entry = self._ROUTING_TABLE.get(dest, None)            
             
             if exist_entry is None:
+                if new_metric == 16:
+                    continue # Don't worry about dead link of unknown dest
                 new_entry[-1] = ["New dest."]
-            elif new_metric < exist_entry[1]:
-                new_entry[-1] = ["Shorter route"]
-            elif new_metric == exist_entry[1]:
-                if new_entry[0] != exist_entry[0]:
-                    new_entry[-1] = ["New route, same cost"]
-                else:
-                    new_entry[-1] = ["Reset timer"]
-            elif new_metric == 16:
-                new_entry[-1] = ["Link unactivated."]
             else:
-                continue
-            self._ROUTING_TABLE[dest] = new_entry
+                if new_metric < exist_entry[1]:
+                    new_entry[-1] = ["Shorter route"]
+                elif new_metric == 16:
+                    if exist_entry[0] == 16:
+                        continue # already receive this link dead
+                    # 1st time known dest (metric < 16) has dead link
+                    new_entry[-1] = ["Link dead."] 
+                elif new_metric == exist_entry[1]:
+                    new_entry[-1] = ["Reset timer"]
+                    if new_entry[0] != exist_entry[0]:
+                        new_entry[-1] = ["Same cost"] # New route, reset timer still
+                else:
+                    continue # ["Slower route."], not update
 
+            self._ROUTING_TABLE[dest] = new_entry
+            # updated dest entry could be in garbage collecting
+            self._garbages.pop(dest, None)
 
     def garbage_collection(self, gtime):
-        for item, time in self._garbages.copy():
+        for item, time in self._garbages.copy().items():
             if self.timer.is_expired(RTimer.GARBAGE_TIMEOUT, gtime, time):
                 self._ROUTING_TABLE.pop(item, None)
-                self._garbages.remove((item, time))
+                self._garbages.pop(item)
                 print(f"Removed dead link to {item} at {strtime(gtime)}")
 
     def has_expired_entry(self, etime):
@@ -79,10 +87,9 @@ class Router:
                 continue
 
             if self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
+                entry[1], entry[-1] = 16, ["No response."]
                 self._ROUTING_TABLE[dest][1] = 16 # set to infinity
-                self._garbages.append((dest, ttl))
-                print(self._garbages)
-                print(self._ROUTING_TABLE)
+                self._garbages[dest] = ttl
                 print(f"Found expired link to {dest} at {strtime(etime)}")
         return len(self._garbages) < 0
 
