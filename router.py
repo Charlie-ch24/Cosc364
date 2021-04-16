@@ -37,6 +37,10 @@ class Router:
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
+            
+            if metric < 16 and new_metric >= 16:
+                # unreachable, deadlink update will have metric = 16
+                continue
             new_metric = 16 if new_metric > 16 else new_metric
 
             new_entry = [nxtHop, new_metric, utime.timestamp(), []]
@@ -51,6 +55,10 @@ class Router:
                     new_entry[-1] = ["New route, same cost"]
                 else:
                     new_entry[-1] = ["Reset timer"]
+            elif new_metric == 16:
+                new_entry[-1] = ["Link unactivated."]
+            else:
+                continue
             self._ROUTING_TABLE[dest] = new_entry
 
 
