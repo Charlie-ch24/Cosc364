@@ -16,7 +16,7 @@ class Router:
         self.INPUT_PORTS = inputs
 
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = [rID, 0, startTime, ["Time Active"]]
+        self._ROUTING_TABLE[rID] = ["-", 0, startTime, ["Time Active"]]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
@@ -35,7 +35,6 @@ class Router:
 
     def update_route_table(self, routes, utime):
         print(f"Received ROUTES {str(routes)} at {strtime(utime)}")
-
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
