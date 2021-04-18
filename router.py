@@ -1,20 +1,22 @@
-
 """
 Assignment 1: RIP protocol
-Team: Bach Vu (25082165), Charlie Hunter ()
+Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
+from timer import RTimer
+from deamon_sup import strCurrTime as strtime
 
 class Router:
-    def __init__(self, rID, inputs, outputs, ptime):
-        self._lastPrint = -1
-        self.TIMEOUT_print = 5
+    def __init__(self, rID, inputs, outputs, startTime, timeout):
+        _timeout = timeout if timeout is not None else 20
+        self.timer = RTimer(_timeout)
+        self._garbages = {} # (dest, time since expired)
 
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = ["-", 0, ptime, []]
+        self._ROUTING_TABLE[rID] = [rID, 0, startTime, ["Time Active"]]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
@@ -25,41 +27,71 @@ class Router:
     def get_routing_table(self, dest):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
-            if dest != key:
-                entries.append((key, self.ROUTER_ID, val[1]))
+            if dest == val[1]:
+                # don't re-advertise info from a hop
+                continue
+            entries.append((key, self.ROUTER_ID, val[1]))
         return entries
 
-    def update_route_table(self, routes, time):
-        """ Just testing """
+    def update_route_table(self, routes, utime):
+        print(f"Received ROUTES {str(routes)} at {strtime(utime)}")
 
-        print(routes, "ROUTES LIST")
-
-        is_updated = False # True if at least 1 entry updated
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
-            new_metric = 16 if new_metric > 16 else new_metric
+            if metric < 16 and new_metric >= 16:
+                # unreachable, deadlink update will have metric = 16
+                continue
 
-            new_entry = [nxtHop, new_metric, time, []]
-            exist_entry = self._ROUTING_TABLE.get(dest, None)
+            new_metric = 16 if new_metric > 16 else new_metric            
+            new_entry = [nxtHop, new_metric, utime.timestamp(), []]
+            exist_entry = self._ROUTING_TABLE.get(dest, None)            
             
             if exist_entry is None:
+                if new_metric == 16:
+                    continue # Don't worry about dead link of unknown dest
                 new_entry[-1] = ["New dest."]
-                self._ROUTING_TABLE[dest] = new_entry
-                is_updated = True
-            elif new_metric < exist_entry[1]:
-                new_entry[-1] = ["Shorter route"]
-                self._ROUTING_TABLE[dest] = new_entry
-                is_updated = True
-            elif new_metric == exist_entry[1]:
-                new_entry[-1] = ["Reset timer"]
-                if new_entry[0] != exist_entry[0]:
-                    new_entry[-1] = ["New route, same cost"]
-                    is_updated = True
-                self._ROUTING_TABLE[dest] = new_entry
-                # If not new route (just reset timer) then don't raise updat flag
+            else:
+                if new_metric < exist_entry[1]:
+                    new_entry[-1] = ["Shorter route"]
+                elif new_metric == 16:
+                    if exist_entry[0] == 16:
+                        continue # already receive this link dead
+                    # 1st time known dest (metric < 16) has dead link
+                    new_entry[-1] = ["Link dead."] 
+                elif new_metric == exist_entry[1]:
+                    new_entry[-1] = ["Reset timer"]
+                    if new_entry[0] != exist_entry[0]:
+                        new_entry[-1] = ["Same cost"] # New route, reset timer still
+                else:
+                    continue # ["Slower route."], not update
 
-        return is_updated
+            self._ROUTING_TABLE[dest] = new_entry
+            # updated dest entry could be in garbage collecting
+            self._garbages.pop(dest, None)
+
+    def garbage_collection(self, gtime):
+        for item, time in self._garbages.copy().items():
+            if self.timer.is_expired(RTimer.GARBAGE_TIMEOUT, gtime, time):
+                self._ROUTING_TABLE.pop(item, None)
+                self._garbages.pop(item)
+                print(f"Removed dead link to {item} at {strtime(gtime)}")
+
+    def has_expired_entry(self, etime):
+        for dest,entry in self._ROUTING_TABLE.items():
+            if dest == self.ROUTER_ID:
+                continue
+
+            _, metric, ttl, _ = entry
+            if metric == 16:
+                continue
+
+            if self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
+                entry[1], entry[-1] = 16, ["No response."]
+                self._ROUTING_TABLE[dest][1] = 16 # set to infinity
+                self._garbages[dest] = ttl
+                print(f"Found expired link to {dest} at {strtime(etime)}")
+        return len(self._garbages) < 0
 
     def is_expected_sender(self, sender):
         for link in self.OUTPUT_PORTS.values():
@@ -78,22 +110,25 @@ class Router:
         print("Use Ctrl+C or Del to shutdown.")
         print()
 
-    def print_route_table(self, is_updated, ptime, strtime):
-        if not is_updated:
-            if (ptime - self._lastPrint) < self.TIMEOUT_print:
-                return
-
+    def print_route_table(self, ptime):
+        if not self.timer.is_expired(RTimer.PRINT_TIMEOUT, ptime):
+            return
+            
         print("="*66)
-        print("|{:19}{} [{}]  {:19}|".format(" ", "ROUTING TABLE", strtime, " "))
+        print("|{:16}--{} [{}]--{:16}|".format(" ", "ROUTING TABLE", strtime(ptime), " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
             "Dest.", "Next Hop", "Metric", "Time (s)", "Notes"))
         print("|" + "-"*64 + "|")
         for dest, record in self._ROUTING_TABLE.items():
             hop, cost, log_time, path = record
-            duration = ptime - log_time
+            duration = ptime.timestamp() - log_time
             print("|{:^10}|{:^10}|{:^10}|{:^10.3f}|{:^20}|".format(
                 dest, hop, cost, duration, str(path)))
-            record[3] = []
         print("="*66)
-        self._lastPrint = ptime
+        self.timer.reset_timer(RTimer.PRINT_TIMEOUT)
 
+    def reset_timer(self, mode):
+        self.timer.reset_timer(mode)
+
+    def is_expired(self, mode, curr_time):
+        return self.timer.is_expired(mode, curr_time)
