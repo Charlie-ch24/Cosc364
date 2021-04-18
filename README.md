@@ -38,8 +38,10 @@ Charlie Hunter: 27380476
 | `test1a`  | Invalid Router ID          |
 | `test1b`  | Invalid Router Input port  |
 | `test1c`  | Invalid Router Output port |
-| `test2a`  | Missing 1 mandatory field  |
-| `test2b`  | Missing mandatory fields   |
+| `test2a`  | Missing Rid mandatory field  |
+| `test2b`  | Missing Inputs mandatory fields (Input Values)  |
+| `test2c`  | Missing mandatory fields in output (missing metric)  |
+| `test2d`  | Missing mandatory fields in output (missing router)  |
 
 ## Documatation
 
