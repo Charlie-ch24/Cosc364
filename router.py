@@ -14,7 +14,7 @@ class Router:
         self.INPUT_PORTS = inputs
 
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
-        self._ROUTING_TABLE[rID] = [rID, 0, ptime, []]
+        self._ROUTING_TABLE[rID] = ["-", 0, ptime, []]
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
