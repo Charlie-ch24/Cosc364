@@ -20,23 +20,40 @@ def read_config(filename):
     for line in config_data:
         head, data = line.split(':')
         if head == "router-id":
-            rID = int(data)
+            try:
+                rID = int(data)
+            except:
+                raise ValueError("Router ID must be an Int")
             if not 0 < rID or rID > 64000:
                 raise ValueError("Router ID must be between 1 and 64000.")
         elif head == "input-ports":
-            inputs = [int(port) for port in data.rstrip().split(',')]
+            try:
+                inputs = [int(port) for port in data.rstrip().split(',')]
+            except:
+                raise ValueError("Invalid input port(s) in config data.\nInputs muse be an int")
             if not is_valid_ports(inputs):
                 raise ValueError("Invalid input port(s) in config data.\nPorts must be between 1024 and 64000.")
         elif head == "outputs":
             outputs = [port.strip() for port in data.rstrip().split(',')]
-            ports = [int(output.split('-')[0]) for output in outputs]
+            print(outputs)
+            from_router = [int(output.split('-')[0]) for output in outputs]
+            print(from_router)
+            ports = [int(output.split('-')[1]) for output in outputs]
+            try:
+                metric = [int(output.split('-')[2]) for output in outputs]
+            except:
+                raise ValueError("Invalid output metric(s) in config data.\nMetric must be an int")
+            try:
+                outputRid = [int(output.split('-')[3]) for output in outputs]
+            except:
+                raise ValueError("Invalid output router id(s) in config data.\nRouter must be an int")
             if not is_valid_ports(ports):
                 raise ValueError("Invalid output port(s) in config data.\nPorts must be between 1024 and 64000.")
         elif head == "timer":
             timeout = int(data)
-            if not 0 < rID or rID > 30:
+            if not 0 < timeout or timeout > 30:
                 raise ValueError("Timeout must be between 1 and 30.")
-
+    print(outputs, "1")
     return rID, inputs, outputs, timeout
 
 def is_valid_ports(ports):
@@ -82,7 +99,9 @@ def process_rip_packet(packet):
         return []
 
     routes = []
+    print(len(packet), "pak")
     entry_count = (len(packet)-4)//20
+    print(entry_count)
     for i in range(entry_count):
         si = i*20 + 4 # entry_start_index
         dest_id  = int.from_bytes(packet[si+4:si+8], byteorder='big')
