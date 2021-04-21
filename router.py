@@ -20,9 +20,11 @@ class Router:
 
         self.OUTPUT_PORTS = {}
         for output in outputs:
-            port, cost, dest = output.split('-')
-            port, cost, dest = int(port), int(cost), int(dest)
-            self.OUTPUT_PORTS[dest] = (port, cost)
+            from_rid, port, cost, dest = output.split('-')
+            from_rid, port, cost, dest = str(from_rid), int(port), int(cost), int(dest)
+            self.OUTPUT_PORTS[dest] = (port, cost, from_rid)
+            print(self.OUTPUT_PORTS[dest], "random")
+
 
     def get_routing_table(self, dest):
         entries = []

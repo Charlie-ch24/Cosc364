@@ -35,7 +35,9 @@ def send():
         message = system.create_rip_packet(table)
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
-            if sock.getsockname()[1] % 10 == destID:
+            fId = link[2]
+            fId = int(fId)
+            if fId == sock.getsockname()[1]:
                 sock.sendto(message, dest)
                 break
 
@@ -43,7 +45,6 @@ def send_periodic():
     """ Execute periodically """
     if not ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT, getTime()):
         return
-
     send()
     ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT) # Reset timer after sent to all neighbour
     print(f"Routing Table (periodic) sent to neighbours at {system.strCurrTime()}.\n")
@@ -83,8 +84,10 @@ def init_router():
 
     # First time notice to neighbours
     createSocket()
+
     ROUTER.print_route_table(getTime())
     send_periodic()
+
 
 if __name__ == "__main__":
     try:
