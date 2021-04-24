@@ -4,7 +4,7 @@ Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 ########## Header ##########
-import deamon_sup as system
+import daemon_sup as system
 import socket, time, select
 import sys, random, datetime # must use
 import traceback # optional features
@@ -36,7 +36,6 @@ def send():
         dest = (LocalHost, link[0])
         for sock in SOCKETS:
             fId = link[2]
-            fId = int(fId)
             if fId == sock.getsockname()[1]:
                 sock.sendto(message, dest)
                 break
