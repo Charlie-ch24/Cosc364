@@ -64,7 +64,7 @@ def receive(timeout = 0.1):
     """ Return True if some data received """
     readable, _, _ = select.select(SOCKETS, [], [], timeout)
     for sock in readable:
-        data, sender = sock.recvfrom(1024)
+        data, sender = sock.recvfrom(1024) #recive packet where 1024 is packet size (head+body)
         if not ROUTER.is_expected_sender(sender):
             print(f"Droped message on {sender} -> {sock.getsockname()} link!")
             continue
