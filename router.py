@@ -39,21 +39,18 @@ class Router:
                 continue
             if mode == "Poison enhance" and val[3] != "Shorter route":
                 continue
+                
             new_metric = val[1] + self.OUTPUT_PORTS[dest][1]
+            if new_metric > 15 and val[1] != 16:
+                continue
             entries.append((key, self.ROUTER_ID, new_metric))
         return entries
 
     def update_route_table(self, routes, utime):
         update_flag = False
         for route in routes:
-            dest, nxtHop, metric = route
-            # new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
-            # if metric < 16 and new_metric >= 16:
-            #     # unreachable, deadlink update will have metric = 16
-            #     continue
-
-            new_metric = min(metric, 16)            
-            new_entry = [nxtHop, new_metric, utime.timestamp(), ""]
+            dest, nxtHop, metric = route          
+            new_entry = [nxtHop, metric, utime.timestamp(), ""]
             exist_entry = self._ROUTING_TABLE.get(dest, None)            
             
             if not self._need_update(new_entry, exist_entry):
