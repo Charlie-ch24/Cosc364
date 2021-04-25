@@ -4,7 +4,7 @@ Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 from timer import RTimer
-from daemon_sup import strCurrTime as strtime
+from daemon_sup import strCurrTime, getTime
 
 class Router:
     def __init__(self, rID, inputs, outputs, startTime, timeout):
@@ -23,8 +23,6 @@ class Router:
             from_rid, port, cost, dest = output.split('-')
             from_rid, port, cost, dest = int(from_rid), int(port), int(cost), int(dest)
             self.OUTPUT_PORTS[dest] = (port, cost, from_rid)
-            print(self.OUTPUT_PORTS[dest], "random")
-
 
     def get_routing_table(self, dest):
         entries = []
@@ -37,7 +35,7 @@ class Router:
         return entries
 
     def update_route_table(self, routes, utime):
-        print(f"Received ROUTES {str(routes)} at {strtime(utime)}")
+        print(f"Received ROUTES {str(routes)} at {strCurrTime(utime)}")
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
@@ -96,7 +94,7 @@ class Router:
             if self.timer.is_expired(RTimer.GARBAGE_TIMEOUT, gtime, time):
                 self._ROUTING_TABLE.pop(item, None)
                 self._garbages.pop(item)
-                print(f"Removed dead link to {item} at {strtime(gtime)}")
+                print(f"Removed dead link to {item} at {strCurrTime(gtime)}")
 
     def has_expired_entry(self, etime):
         for dest,entry in self._ROUTING_TABLE.items():
@@ -111,7 +109,7 @@ class Router:
                 entry[1], entry[-1] = 16, ["No response."]
                 self._ROUTING_TABLE[dest][1] = 16 # set to infinity
                 self._garbages[dest] = ttl
-                print(f"Found expired link to {dest} at {strtime(etime)}")
+                print(f"Found expired link to {dest} at {strCurrTime(etime)}")
         return len(self._garbages) < 0
 
     def is_expected_sender(self, sender):
@@ -131,12 +129,13 @@ class Router:
         print("Use Ctrl+C or Del to shutdown.")
         print()
 
-    def print_route_table(self, ptime):
+    def print_route_table(self):
+        ptime = getTime()
         if not self.timer.is_expired(RTimer.PRINT_TIMEOUT, ptime):
             return
             
         print("="*66)
-        print("|{:16}--{} [{}]--{:16}|".format(" ", "ROUTING TABLE", strtime(ptime), " "))
+        print("|{:16}--{} [{}]--{:16}|".format(" ", "ROUTING TABLE", strCurrTime(ptime), " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
             "Dest.", "Next Hop", "Metric", "Time (s)", "Notes"))
         print("|" + "-"*64 + "|")
@@ -153,3 +152,6 @@ class Router:
 
     def is_expired(self, mode, curr_time):
         return self.timer.is_expired(mode, curr_time)
+
+    def get_update_delay(self):
+        return self.timer.get_periodic_timeout(True)

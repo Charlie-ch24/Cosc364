@@ -95,3 +95,10 @@ def strCurrTime(time=None):
         return datetime.now().strftime('%H:%M:%S.%f')[:-3]
     else:
         return time.strftime('%H:%M:%S.%f')[:-3]
+
+def getTime(as_float=False):
+    """ Get current time as float or object """
+    if as_float:
+        return datetime.now().timestamp()
+    else:
+        return datetime.now()
