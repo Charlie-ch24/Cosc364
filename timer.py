@@ -18,12 +18,9 @@ class RTimer:
         """ How often to print routing table """
         return self._timeout * 1/2
 
-    def get_periodic_timeout(self, is_updated=False):
+    def get_periodic_timeout(self):
         """ From config, Ripv2 value 30 +- (0,5) """
-        mini_counter = random.uniform(-1/5, 1/5)
-        if is_updated:
-            return self._timeout * mini_counter
-        return self._timeout * (1- mini_counter)
+        return self._timeout * (1-random.uniform(-1/5, 1/5))
 
     def get_entry_timeout(self):
         """ Expiry of a routing entry. Ripv2 value 180 """

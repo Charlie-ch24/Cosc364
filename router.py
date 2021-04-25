@@ -4,11 +4,11 @@ Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 from timer import RTimer
-from daemon_sup import strCurrTime, getTime
+from daemon_sup import strCurrTime
 
 class Router:
     def __init__(self, rID, inputs, outputs, startTime, timeout):
-        _timeout = timeout if timeout is not None else 10
+        _timeout = timeout if timeout is not None else 5
         self.timer = RTimer(_timeout)
         self._garbages = {} # (dest, time since expired)
 
@@ -18,18 +18,17 @@ class Router:
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
         self._ROUTING_TABLE[rID] = ["-", 0, startTime, ["Time Active"]]
 
-        self.OUTPUT_PORTS = {}
+        self.OUTPUT_PORTS = {} # (dest, cost, port_to_send)
         for output in outputs:
-            from_rid, port, cost, dest = output.split('-')
-            from_rid, port, cost, dest = int(from_rid), int(port), int(cost), int(dest)
-            self.OUTPUT_PORTS[dest] = (port, cost, from_rid)
+            from_port, to_port, cost, dest = output.split('-')
+            from_port, to_port, cost, dest = int(from_port), int(to_port), int(cost), int(dest)
+            self.OUTPUT_PORTS[dest] = (to_port, cost, from_port)
 
     def get_routing_table(self, dest):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
-            if dest == val[0] or dest == key:
+            if dest == val[0]:
                 # don't re-advertise info from a hop
-                # dest == key is not very needed (>0) but help reduce pk size
                 continue
             entries.append((key, self.ROUTER_ID, val[1]))
         return entries
@@ -103,18 +102,21 @@ class Router:
 
             _, metric, ttl, _ = entry
             if metric == 16:
-                continue
+                if dest in self._garbages.keys():
+                    # Waiting to be removed
+                    continue
+                self._garbages[dest] = etime.timestamp()
 
-            if self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
+            elif self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
                 entry[1], entry[-1] = 16, ["No response."]
                 self._ROUTING_TABLE[dest][1] = 16 # set to infinity
-                self._garbages[dest] = ttl
+                self._garbages[dest] = etime.timestamp()
                 print(f"Found expired link to {dest} at {strCurrTime(etime)}")
         return len(self._garbages) < 0
 
-    def is_expected_sender(self, sender):
+    def is_expected_sender(self, sender, receiver):
         for link in self.OUTPUT_PORTS.values():
-            if sender == ("127.0.0.1", link[0]):
+            if sender[1] == link[0] and receiver[1] == link[2]:
                 return True
         return False
 
@@ -129,8 +131,7 @@ class Router:
         print("Use Ctrl+C or Del to shutdown.")
         print()
 
-    def print_route_table(self):
-        ptime = getTime()
+    def print_route_table(self, ptime):
         if not self.timer.is_expired(RTimer.PRINT_TIMEOUT, ptime):
             return
             
@@ -153,5 +154,3 @@ class Router:
     def is_expired(self, mode, curr_time):
         return self.timer.is_expired(mode, curr_time)
 
-    def get_update_delay(self):
-        return self.timer.get_periodic_timeout(True)
