@@ -15,7 +15,7 @@ class Router:
         self.ROUTER_ID = rID
         self.INPUT_PORTS = inputs
 
-        self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
+        self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, note}
         self._ROUTING_TABLE[rID] = ["-", 0, startTime, ["Time Active"]]
 
         self.OUTPUT_PORTS = {} # (dest, cost, port_to_send)
@@ -24,11 +24,14 @@ class Router:
             from_port, to_port, cost, dest = int(from_port), int(to_port), int(cost), int(dest)
             self.OUTPUT_PORTS[dest] = (to_port, cost, from_port)
 
-    def get_routing_table(self, dest):
+    def get_routing_table(self, dest, mode):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
             if dest == val[0]:
                 # don't re-advertise info from a hop
+                continue
+            if mode == "expiry" and val[1] != 16:
+                # triggered update, contain expired entries only (pg29)
                 continue
             entries.append((key, self.ROUTER_ID, val[1]))
         return entries
@@ -42,7 +45,7 @@ class Router:
                 # unreachable, deadlink update will have metric = 16
                 continue
 
-            new_metric = 16 if new_metric > 16 else new_metric            
+            new_metric = min(new_metric, 16)            
             new_entry = [nxtHop, new_metric, utime.timestamp(), []]
             exist_entry = self._ROUTING_TABLE.get(dest, None)            
             
@@ -89,13 +92,22 @@ class Router:
         return True 
 
     def garbage_collection(self, gtime):
+        if not self.timer.is_expired(RTimer.GARBAGES_TIMEOUT, gtime):
+            return False
+
         for item, time in self._garbages.copy().items():
             if self.timer.is_expired(RTimer.GARBAGE_TIMEOUT, gtime, time):
                 self._ROUTING_TABLE.pop(item, None)
                 self._garbages.pop(item)
                 print(f"Removed dead link to {item} at {strCurrTime(gtime)}")
+        self.timer.reset_timer(RTimer.GARBAGES_TIMEOUT)
 
     def has_expired_entry(self, etime):
+        if not self.timer.is_expired(RTimer.ENTRIES_TIMEOUT, etime):
+            """ Trigger once if multilink die in short period """
+            return False
+
+        garbage_found = 0
         for dest,entry in self._ROUTING_TABLE.items():
             if dest == self.ROUTER_ID:
                 continue
@@ -103,18 +115,24 @@ class Router:
             _, metric, ttl, _ = entry
             if metric == 16:
                 if dest in self._garbages.keys():
-                    # Waiting to be removed
+                    # Waiting to be removed, skip to avoid sending same info to network
                     continue
                 self._garbages[dest] = etime.timestamp()
+                garbage_found += 1
 
             elif self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
-                entry[1], entry[-1] = 16, ["No response."]
+                entry[1], entry[3] = 16, ["No response."]
                 self._ROUTING_TABLE[dest][1] = 16 # set to infinity
                 self._garbages[dest] = etime.timestamp()
                 print(f"Found expired link to {dest} at {strCurrTime(etime)}")
-        return len(self._garbages) < 0
+                garbage_found += 1
+
+        self.timer.reset_timer(RTimer.ENTRIES_TIMEOUT)
+        # print(garbage_found)
+        return garbage_found > 0
 
     def is_expected_sender(self, sender, receiver):
+        """ Avoid unwanted broadcast/malicious pecket """
         for link in self.OUTPUT_PORTS.values():
             if sender[1] == link[0] and receiver[1] == link[2]:
                 return True
@@ -141,10 +159,10 @@ class Router:
             "Dest.", "Next Hop", "Metric", "Time (s)", "Notes"))
         print("|" + "-"*64 + "|")
         for dest, record in self._ROUTING_TABLE.items():
-            hop, cost, log_time, path = record
+            hop, cost, log_time, note = record
             duration = ptime.timestamp() - log_time
             print("|{:^10}|{:^10}|{:^10}|{:^10.3f}|{:^20}|".format(
-                dest, hop, cost, duration, str(path)))
+                dest, hop, cost, duration, str(note)))
         print("="*66)
         self.timer.reset_timer(RTimer.PRINT_TIMEOUT)
 

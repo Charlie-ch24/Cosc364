@@ -22,29 +22,30 @@ def createSocket():
         sock.bind((LocalHost, port))
         SOCKETS[port] = sock
 
-def send():
+def send(mode):
     """ Send forwarding table to neighbour routers """
     for destID, link in ROUTER.OUTPUT_PORTS.items():
-        table = ROUTER.get_routing_table(destID)
+        table = ROUTER.get_routing_table(destID, mode)
         message = system.create_rip_packet(table)
         dest = (LocalHost, link[0])
         SOCKETS[link[2]].sendto(message, dest)
+    if mode == "periodic":
+        ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT)
 
 def send_periodic():
     """ Execute periodically """
     mode = "None"
-    if ROUTER.has_expired_entry(getTime()):
-        mode = "expiry"
-    elif ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT, getTime()):
+    if ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT, getTime()):
         mode = "periodic"
+    elif ROUTER.has_expired_entry(getTime()):
+        mode = "expiry"
     else:
         return
 
-    send()
+    send(mode)
     print(f"Routing Table ({mode}) sent to neighbours at {system.strCurrTime()}.\n")
-    ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT)
     
-def receive(timeout = 0.001):
+def receive(timeout = 0.013):
     """ Return True if some data received """
     readable, _, _ = select.select(SOCKETS.values(), [], [], timeout)
     for sock in readable:
