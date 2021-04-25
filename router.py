@@ -4,11 +4,11 @@ Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 from timer import RTimer
-from daemon_sup import strCurrTime as strtime
+from daemon_sup import strCurrTime
 
 class Router:
     def __init__(self, rID, inputs, outputs, startTime, timeout):
-        _timeout = timeout if timeout is not None else 10
+        _timeout = timeout if timeout is not None else 5
         self.timer = RTimer(_timeout)
         self._garbages = {} # (dest, time since expired)
 
@@ -18,26 +18,23 @@ class Router:
         self._ROUTING_TABLE = {}  # {Dest: nxt Hop, metric, time, path}
         self._ROUTING_TABLE[rID] = ["-", 0, startTime, ["Time Active"]]
 
-        self.OUTPUT_PORTS = {}
+        self.OUTPUT_PORTS = {} # (dest, cost, port_to_send)
         for output in outputs:
-            from_rid, port, cost, dest = output.split('-')
-            from_rid, port, cost, dest = int(from_rid), int(port), int(cost), int(dest)
-            self.OUTPUT_PORTS[dest] = (port, cost, from_rid)
-            print(self.OUTPUT_PORTS[dest], "random")
-
+            from_port, to_port, cost, dest = output.split('-')
+            from_port, to_port, cost, dest = int(from_port), int(to_port), int(cost), int(dest)
+            self.OUTPUT_PORTS[dest] = (to_port, cost, from_port)
 
     def get_routing_table(self, dest):
         entries = []
         for key, val in self._ROUTING_TABLE.items():
-            if dest == val[0] or dest == key:
+            if dest == val[0]:
                 # don't re-advertise info from a hop
-                # dest == key is not very needed (>0) but help reduce pk size
                 continue
             entries.append((key, self.ROUTER_ID, val[1]))
         return entries
 
     def update_route_table(self, routes, utime):
-        print(f"Received ROUTES {str(routes)} at {strtime(utime)}")
+        print(f"Received ROUTES {str(routes)} at {strCurrTime(utime)}")
         for route in routes:
             dest, nxtHop, metric = route
             new_metric = metric + self.OUTPUT_PORTS[nxtHop][1] # link cost to receive
@@ -96,7 +93,7 @@ class Router:
             if self.timer.is_expired(RTimer.GARBAGE_TIMEOUT, gtime, time):
                 self._ROUTING_TABLE.pop(item, None)
                 self._garbages.pop(item)
-                print(f"Removed dead link to {item} at {strtime(gtime)}")
+                print(f"Removed dead link to {item} at {strCurrTime(gtime)}")
 
     def has_expired_entry(self, etime):
         for dest,entry in self._ROUTING_TABLE.items():
@@ -105,18 +102,21 @@ class Router:
 
             _, metric, ttl, _ = entry
             if metric == 16:
-                continue
+                if dest in self._garbages.keys():
+                    # Waiting to be removed
+                    continue
+                self._garbages[dest] = etime.timestamp()
 
-            if self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
+            elif self.timer.is_expired(RTimer.ENTRY_TIMEOUT, etime, ttl):
                 entry[1], entry[-1] = 16, ["No response."]
                 self._ROUTING_TABLE[dest][1] = 16 # set to infinity
-                self._garbages[dest] = ttl
-                print(f"Found expired link to {dest} at {strtime(etime)}")
+                self._garbages[dest] = etime.timestamp()
+                print(f"Found expired link to {dest} at {strCurrTime(etime)}")
         return len(self._garbages) < 0
 
-    def is_expected_sender(self, sender):
+    def is_expected_sender(self, sender, receiver):
         for link in self.OUTPUT_PORTS.values():
-            if sender == ("127.0.0.1", link[0]):
+            if sender[1] == link[0] and receiver[1] == link[2]:
                 return True
         return False
 
@@ -136,7 +136,7 @@ class Router:
             return
             
         print("="*66)
-        print("|{:16}--{} [{}]--{:16}|".format(" ", "ROUTING TABLE", strtime(ptime), " "))
+        print("|{:16}--{} [{}]--{:16}|".format(" ", "ROUTING TABLE", strCurrTime(ptime), " "))
         print("|{:^10}|{:^10}|{:^10}|{:^10}|{:^20}|".format(
             "Dest.", "Next Hop", "Metric", "Time (s)", "Notes"))
         print("|" + "-"*64 + "|")
@@ -153,3 +153,4 @@ class Router:
 
     def is_expired(self, mode, curr_time):
         return self.timer.is_expired(mode, curr_time)
+
