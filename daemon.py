@@ -4,8 +4,7 @@ Team: Bach Vu (25082165), Charlie Hunter (27380476)
 Router main program
 """
 ########## Header ##########
-import daemon_sup as system
-from daemon_sup import getTime
+from daemon_sup import *
 import socket, time, select
 import sys, random # must use
 import traceback # optional features
@@ -22,29 +21,36 @@ def createSocket():
         sock.bind((LocalHost, port))
         SOCKETS[port] = sock
 
-def send():
+def send(mode):
     """ Send forwarding table to neighbour routers """
     for destID, link in ROUTER.OUTPUT_PORTS.items():
-        table = ROUTER.get_routing_table(destID)
-        message = system.create_rip_packet(table)
+        table = ROUTER.get_routing_table(destID, mode)
+        if len(table) == 0:
+            # entry may got updated while delay & prepare package
+            continue
+        message = create_rip_packet(table)
         dest = (LocalHost, link[0])
         SOCKETS[link[2]].sendto(message, dest)
 
+    print(f"Routing Table ({mode}) sent to neighbours at {strCurrTime()}.\n")
+    if mode == ROUTER.REGULAR_UPDATE:
+        ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT)
+        
+
 def send_periodic():
-    """ Execute periodically """
     mode = "None"
-    if ROUTER.has_expired_entry(getTime()):
-        mode = "expiry"
-    elif ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT, getTime()):
-        mode = "periodic"
+    if ROUTER.is_expired(RTimer.PERIODIC_TIMEOUT, getTime()):
+        # Regular update
+        mode = ROUTER.REGULAR_UPDATE
+    elif ROUTER.has_expired_entry(getTime()):
+        # Triggered update. Known NoResponse links don't trigger this
+        mode = ROUTER.EXPIRED_UPDATE
     else:
         return
 
-    send()
-    print(f"Routing Table ({mode}) sent to neighbours at {system.strCurrTime()}.\n")
-    ROUTER.reset_timer(RTimer.PERIODIC_TIMEOUT)
+    send(mode)
     
-def receive(timeout = 0.001):
+def receive(timeout = 0.013):
     """ Return True if some data received """
     readable, _, _ = select.select(SOCKETS.values(), [], [], timeout)
     for sock in readable:
@@ -53,8 +59,12 @@ def receive(timeout = 0.001):
         if not ROUTER.is_expected_sender(sender, receiver):
             print(f"Droped message on {sender} -> {receiver} link!")
             continue
-        routes = system.process_rip_packet(data)
-        ROUTER.update_route_table(routes, getTime())
+        routes = process_rip_packet(data)
+        print(f"Received ROUTES {str(routes)} at {strCurrTime(getTime())} from {sender}")
+        triggered_update = ROUTER.update_route_table(routes, getTime())
+        if triggered_update:
+            # Next time, the record become Reset Timer
+            send(Router.FAST_ROUTE_UPDATE)
 
 def garbage_collection():
     ROUTER.garbage_collection(getTime())
@@ -63,7 +73,7 @@ def garbage_collection():
 def init_router():
     global ROUTER # include this if modifying global variable
     filename = sys.argv[1]
-    rID, inputs, outputs, timeout = system.read_config(filename)
+    rID, inputs, outputs, timeout = read_config(filename)
 
     #  Router instance with default routing table
     ROUTER = Router(rID, inputs, outputs, getTime(True), timeout)

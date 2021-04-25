@@ -10,9 +10,11 @@ class RTimer:
     PERIODIC_TIMEOUT = 1
     ENTRY_TIMEOUT = 2
     GARBAGE_TIMEOUT = 3
+    ENTRIES_TIMEOUT = 4
+    GARBAGES_TIMEOUT = 5
     def __init__(self, base):        
         self._timeout = base
-        self._time_logs = [-1.0, -1.0, -1.0, -1.0]
+        self._time_logs = [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
 
     def get_print_timeout(self):
         """ How often to print routing table """
@@ -30,6 +32,14 @@ class RTimer:
         """ Delete expired entry delay. Ripv2 value 120 """
         return self._timeout * 4
 
+    def get_entry_check_timeout(self):
+        """ Router periodic check expired entries """
+        return 1 #self._timeout / 5
+
+    def get_garbage_check_timeout(self):
+        """ Router periodic check expired garbage """
+        return 1 # self._timeout / 5
+
     def reset_timer(self, mode):
         self._time_logs[mode] = time.time()
 
@@ -42,6 +52,7 @@ class RTimer:
             return True
 
         timeout_value = [self.get_print_timeout, self.get_periodic_timeout, 
-            self.get_entry_timeout, self.get_garbage_timeout]
+            self.get_entry_timeout, self.get_garbage_timeout,
+            self.get_entry_check_timeout, self.get_garbage_check_timeout]
         time_elapsed = curr_time - self._time_logs[mode]
         return time_elapsed >= timeout_value[mode]() 
