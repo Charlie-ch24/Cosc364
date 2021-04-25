@@ -57,3 +57,4 @@ Charlie Hunter: 27380476
 - Implement triggered updates only when routes become invalid (i.e. when a router
 sets the routes metric to 16 for whatever reason, compare end of page 24 and
 beginning of page 25 in [1]), not for other metric updates or new routes.
+Only execption to this is triger update if faster route is found, to enhance poson reverse (pg 17)
