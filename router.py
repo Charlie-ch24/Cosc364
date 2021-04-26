@@ -1,7 +1,7 @@
 """
 Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter (27380476)
-Router main program
+Router main program/router.py
 """
 from timer import RTimer
 from daemon_sup import strCurrTime

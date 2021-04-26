@@ -1,7 +1,7 @@
 """
 Assignment 1: RIP protocol
 Team: Bach Vu (25082165), Charlie Hunter (27380476)
-Timer main program
+Timer main program/timer.py
 """
 import random, time
 
