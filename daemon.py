@@ -50,7 +50,7 @@ def send_periodic():
 
     send(mode)
     
-def receive(timeout = 0.013):
+def receive(timeout = 0.025):
     """ Return True if some data received """
     readable, _, _ = select.select(SOCKETS.values(), [], [], timeout)
     for sock in readable:

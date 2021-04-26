@@ -87,14 +87,12 @@ def process_rip_packet(packet):
 
     return routes
 
-def packet_check():
-    pass
 
 def strCurrTime(time=None):
     if time is None:
-        return datetime.now().strftime('%H:%M:%S.%f')[:-3]
+        return datetime.now().strftime('%H:%M:%S')
     else:
-        return time.strftime('%H:%M:%S.%f')[:-3]
+        return time.strftime('%H:%M:%S')
 
 def getTime(as_float=False):
     """ Get current time as float or object """

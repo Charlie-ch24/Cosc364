@@ -43,6 +43,7 @@ class Router:
             new_metric = val[1] + self.OUTPUT_PORTS[dest][1]
             if new_metric > 15 and val[1] != 16:
                 continue
+            new_metric = min(new_metric, 16)
             entries.append((key, self.ROUTER_ID, new_metric))
         return entries
 
